@@ -8,6 +8,7 @@ import PublishPage from './pages/PublishPage';
 import CarDetails from './pages/CarDetails';
 
 import Admin from './pages/Admin';
+import Login from './pages/Login';
 
 function App() {
     return (
@@ -18,6 +19,7 @@ function App() {
                     <Route path="/publicar" element={<PublishPage />} />
                     <Route path="/auto/:id" element={<CarDetails />} />
                     <Route path="/admin" element={<Admin />} />
+                    <Route path="/login" element={<Login />} />
                 </Routes>
             </Layout>
         </Router>

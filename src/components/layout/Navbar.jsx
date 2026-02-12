@@ -1,9 +1,19 @@
 import React, { useState } from 'react';
-import { Menu, X, Car, PlusCircle, User } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Menu, X, Car, PlusCircle, User, LogOut } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
+    const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
+    const userJson = localStorage.getItem('user');
+    const user = userJson ? JSON.parse(userJson) : null;
+
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/');
+        window.location.reload();
+    };
 
     return (
         <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100">
@@ -26,9 +36,25 @@ const Navbar = () => {
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Vender mi Auto
                         </Link>
-                        <button className="p-2 text-gray-500 hover:text-blue-600 transition-colors">
-                            <User className="h-6 w-6" />
-                        </button>
+
+                        {user ? (
+                            <div className="flex items-center gap-4">
+                                <span className="text-sm font-medium text-gray-700 hidden lg:block">
+                                    Hola, {user.email.split('@')[0]}
+                                </span>
+                                <button
+                                    onClick={handleLogout}
+                                    className="p-2 text-gray-500 hover:text-red-600 transition-colors"
+                                    title="Cerrar Sesión"
+                                >
+                                    <LogOut className="h-6 w-6" />
+                                </button>
+                            </div>
+                        ) : (
+                            <Link to="/login" className="p-2 text-gray-500 hover:text-blue-600 transition-colors" title="Iniciar Sesión">
+                                <User className="h-6 w-6" />
+                            </Link>
+                        )}
                     </div>
 
                     <div className="flex items-center md:hidden">
@@ -54,10 +80,24 @@ const Navbar = () => {
                             Vender mi Auto
                         </Link>
                         <div className="mt-4 pt-4 border-t border-gray-100">
-                            <button className="flex items-center w-full px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-md">
-                                <User className="mr-3 h-5 w-5" />
-                                Iniciar Sesión
-                            </button>
+                            {user ? (
+                                <button
+                                    onClick={handleLogout}
+                                    className="flex items-center w-full px-4 py-2 text-base font-medium text-red-600 hover:bg-red-50 rounded-md"
+                                >
+                                    <LogOut className="mr-3 h-5 w-5" />
+                                    Cerrar Sesión
+                                </button>
+                            ) : (
+                                <Link
+                                    to="/login"
+                                    className="flex items-center w-full px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-md"
+                                    onClick={() => setIsOpen(false)}
+                                >
+                                    <User className="mr-3 h-5 w-5" />
+                                    Iniciar Sesión
+                                </Link>
+                            )}
                         </div>
                     </div>
                 </div>

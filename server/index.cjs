@@ -11,6 +11,8 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json());
 
+
+
 // Helper to wrap db.run in promise
 const runQuery = (query, params) => {
     return new Promise((resolve, reject) => {
@@ -248,14 +250,14 @@ app.get('/api/health', (req, res) => {
 
 // SPA Fallback for non-API routes
 // This allows React Router to handle page refreshes in production
-app.get('*', (req, res) => {
-    const distIndex = path.join(__dirname, '../public/dist/index.html');
-    if (fs.existsSync(distIndex)) {
-        res.sendFile(distIndex);
-    } else {
-        res.status(404).send('Not found (Dev mode? Use Vite dev server)');
-    }
-});
+// app.get('*path', (req, res) => {
+//     const distIndex = path.join(__dirname, '../public/dist/index.html');
+//     if (fs.existsSync(distIndex)) {
+//         res.sendFile(distIndex);
+//     } else {
+//         res.status(404).send('Not found (Dev mode? Use Vite dev server)');
+//     }
+// });
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
