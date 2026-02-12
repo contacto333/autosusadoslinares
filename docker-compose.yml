@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: autos-usados-linares
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./server/database.sqlite:/app/server/database.sqlite
+      - ./public/uploads:/app/public/uploads
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped

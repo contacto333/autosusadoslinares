@@ -1,0 +1,33 @@
+# Autos Usados Linares - Documento de Diseño
+
+## Visión General
+Plataforma minimalista (SPA) para la publicación y venta de autos usados en Linares.
+
+## Requerimientos Funcionales
+
+### 1. Usuarios e Inventario
+- **Publicación Rápida**: Creación de anuncios con datos mínimos (Título, Precio, Descripción, Fotos, Contacto).
+- **Cuenta de Invitado**: Creación automática de cuenta al publicar por primera vez.
+- **Límites**: 1 publicación activa para usuarios invitados.
+- **Gestión**: Editar, eliminar y republicar anuncios propios.
+
+### 2. Visualización
+- **Feed de Inicio**: Listado de publicaciones recientes.
+- **Detalle**: Vista completa con galería de fotos.
+- **Estados**:
+  - *Disponible*: Visible en el feed.
+  - *Vendido*: Marcado visualmente, no contactable.
+  - *Caducado*: Automático tras 60 días sin interacción.
+
+### 3. Contacto
+- Botones directos para **WhatsApp** y **Llamada**.
+
+### 4. Administración
+- Moderación: Eliminar publicaciones inadecuadas.
+- Destacados: Gestionar top 5 publicaciones.
+- Publicidad: Banners con tracking de clics.
+
+## Arquitectura Propuesta
+- **Frontend**: React (Vite) + TailwindCSS.
+- **Backend/DB**: Por definir (Sugerencia: Supabase o Firebase).
+- **Hosting**: Vercel/Netlify.
