@@ -90,6 +90,13 @@ const Home = () => {
                                             <span className="text-xs">Sin Foto</span>
                                         </div>
                                     )}
+                                    {item.status === 'sold' && (
+                                        <div className="absolute inset-0 bg-black/50 z-10 flex items-center justify-center pointer-events-none">
+                                            <span className="text-white font-bold text-xl border-4 border-white px-2 py-1 transform -rotate-12 opacity-80">
+                                                VENDIDO
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="p-4">
                                     <div className="flex justify-between items-start mb-2">

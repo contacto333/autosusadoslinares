@@ -9,6 +9,7 @@ import CarDetails from './pages/CarDetails';
 
 import Admin from './pages/Admin';
 import Login from './pages/Login';
+import EditListing from './pages/EditListing';
 
 function App() {
     return (
@@ -20,6 +21,7 @@ function App() {
                     <Route path="/auto/:id" element={<CarDetails />} />
                     <Route path="/admin" element={<Admin />} />
                     <Route path="/login" element={<Login />} />
+                    <Route path="/editar/:id" element={<EditListing />} />
                 </Routes>
             </Layout>
         </Router>

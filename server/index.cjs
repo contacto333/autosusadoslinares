@@ -13,6 +13,8 @@ app.use(express.json());
 
 
 
+
+
 // Helper to wrap db.run in promise
 const runQuery = (query, params) => {
     return new Promise((resolve, reject) => {
@@ -159,9 +161,8 @@ app.get('/api/listings', async (req, res) => {
             SELECT l.*, i.url as main_image 
             FROM listings l 
             LEFT JOIN images i ON l.id = i.listing_id 
-            WHERE l.status = 'available'
             GROUP BY l.id
-            ORDER BY l.created_at DESC 
+            ORDER BY (CASE WHEN l.status = 'sold' THEN 1 ELSE 0 END), l.created_at DESC 
             LIMIT 50
         `);
         res.json(listings);
@@ -181,6 +182,38 @@ app.get('/api/listings/:id', async (req, res) => {
         await runQuery("UPDATE listings SET views = views + 1 WHERE id = ?", [req.params.id]);
 
         res.json({ ...listing, images });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Update Listing Status (Sold/Available)
+app.patch('/api/listings/:id/status', async (req, res) => {
+    const { status } = req.body; // 'available' or 'sold'
+    const { id } = req.params;
+
+    // In a real app, verify user ownership here (e.g., req.user.id === listing.user_id)
+    // For now, we trust the implementation or would add auth middleware
+
+    try {
+        await runQuery("UPDATE listings SET status = ? WHERE id = ?", [status, id]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Edit Listing
+app.put('/api/listings/:id', async (req, res) => {
+    const { title, brand, model, year, price, mileage, description, contactName, contactPhone } = req.body;
+    const { id } = req.params;
+
+    try {
+        await runQuery(
+            `UPDATE listings SET title=?, brand=?, model=?, year=?, price=?, mileage=?, description=?, contact_name=?, contact_phone=? WHERE id=?`,
+            [title, brand, model, year, price, mileage, description, contactName, contactPhone, id]
+        );
+        res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

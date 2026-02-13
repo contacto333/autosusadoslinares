@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Phone, ArrowLeft, Calendar, Gauge, Tag, MapPin } from 'lucide-react';
 import { API_URL } from '../api';
 
 const CarDetails = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [car, setCar] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -27,6 +28,30 @@ const CarDetails = () => {
     const mainImage = car.images && car.images.length > 0 ? car.images[0].url : null;
     const otherImages = car.images ? car.images.slice(1) : [];
 
+    const userJson = localStorage.getItem('user');
+    const user = userJson ? JSON.parse(userJson) : null;
+    const isOwner = user && (user.id === car.user_id || user.role === 'admin');
+
+    const handleToggleStatus = async () => {
+        if (!window.confirm('¿Estás seguro de cambiar el estado de esta publicación?')) return;
+        try {
+            const newStatus = car.status === 'available' ? 'sold' : 'available';
+            const response = await fetch(`${API_URL}/api/listings/${id}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+            if (response.ok) {
+                setCar({ ...car, status: newStatus });
+            } else {
+                alert('Error al actualizar estado');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error de conexión');
+        }
+    };
+
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6">
@@ -34,7 +59,7 @@ const CarDetails = () => {
                 Volver al inicio
             </Link>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden relative">
                 <div className="lg:flex">
                     {/* Gallery */}
                     <div className="lg:w-3/5 p-1 bg-gray-50">
@@ -43,6 +68,13 @@ const CarDetails = () => {
                                 <img src={`${API_URL}${mainImage}`} alt={car.title} className="w-full h-full object-cover" />
                             ) : (
                                 <div className="flex items-center justify-center h-96 bg-gray-200 text-gray-400">Sin imagen</div>
+                            )}
+                            {car.status === 'sold' && (
+                                <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center pointer-events-none z-10">
+                                    <span className="text-white font-bold text-4xl transform -rotate-12 border-4 border-white px-6 py-3 opacity-90">
+                                        VENDIDO
+                                    </span>
+                                </div>
                             )}
                         </div>
                         {/* Thumbnails */}
@@ -109,6 +141,30 @@ const CarDetails = () => {
                             </p>
                         </div>
 
+
+                        {isOwner && (
+                            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-8">
+                                <h3 className="text-lg font-bold text-yellow-800 mb-3">Gestión de Publicación</h3>
+                                <div className="flex flex-wrap gap-3">
+                                    <button
+                                        onClick={() => navigate(`/editar/${id}`)}
+                                        className="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
+                                    >
+                                        Editar Publicación
+                                    </button>
+                                    <button
+                                        onClick={handleToggleStatus}
+                                        className={`px-5 py-2.5 rounded-lg font-medium text-white transition-colors shadow-sm ${car.status === 'available'
+                                            ? 'bg-red-600 hover:bg-red-700'
+                                            : 'bg-green-600 hover:bg-green-700'
+                                            }`}
+                                    >
+                                        {car.status === 'available' ? 'Marcar como Vendido' : 'Marcar como Disponible'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="bg-blue-50 rounded-xl p-6">
                             <h3 className="text-lg font-medium text-blue-900 mb-4">Contacto del Vendedor</h3>
                             <div className="flex items-center mb-6">
@@ -142,6 +198,7 @@ const CarDetails = () => {
                     </div>
                 </div>
             </div>
+
         </div>
     );
 };
