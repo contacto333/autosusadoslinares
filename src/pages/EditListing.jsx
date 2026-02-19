@@ -51,8 +51,9 @@ const EditListing = () => {
                         brand: data.brand,
                         model: data.model,
                         year: data.year,
-                        price: data.price,
-                        mileage: data.mileage,
+                        year: data.year,
+                        price: new Intl.NumberFormat('es-CL').format(data.price),
+                        mileage: new Intl.NumberFormat('es-CL').format(data.mileage),
                         description: data.description,
                         contactName: data.contact_name,
                         contactPhone: data.contact_phone
@@ -69,7 +70,18 @@ const EditListing = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+
+        // Handle number formatting for price and mileage
+        if (name === 'price' || name === 'mileage') {
+            // Remove non-numeric characters to get raw number
+            const rawValue = value.replace(/\D/g, '');
+            // Format for display (Chilean peso style: 1.000.000)
+            const formattedValue = rawValue.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+            setFormData(prev => ({ ...prev, [name]: formattedValue }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -84,7 +96,11 @@ const EditListing = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}` // Although backend MVP might not fully check this yet
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify({
+                    ...formData,
+                    price: formData.price.replace(/\./g, ''),
+                    mileage: formData.mileage.replace(/\./g, '')
+                })
             });
 
             const data = await response.json();
@@ -143,7 +159,7 @@ const EditListing = () => {
                                         <DollarSign className="h-5 w-5 text-gray-400" />
                                     </div>
                                     <input
-                                        type="number"
+                                        type="text"
                                         name="price"
                                         required
                                         className="block w-full pl-10 border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2.5 border"
@@ -181,12 +197,13 @@ const EditListing = () => {
                                         <Calendar className="h-5 w-5 text-gray-400" />
                                     </div>
                                     <input
-                                        type="number"
+                                        type="text"
                                         name="year"
+                                        maxLength="4"
                                         required
                                         className="block w-full pl-10 border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2.5 border"
                                         value={formData.year}
-                                        onChange={handleChange}
+                                        onChange={(e) => setFormData({ ...formData, year: e.target.value.replace(/\D/g, '') })}
                                     />
                                 </div>
                             </div>

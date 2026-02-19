@@ -24,7 +24,18 @@ const PublishPage = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+
+        // Handle number formatting for price and mileage
+        if (name === 'price' || name === 'mileage') {
+            // Remove non-numeric characters to get raw number
+            const rawValue = value.replace(/\D/g, '');
+            // Format for display (Chilean peso style: 1.000.000)
+            const formattedValue = rawValue.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+            setFormData(prev => ({ ...prev, [name]: formattedValue }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const handleImageChange = (e) => {
@@ -46,6 +57,9 @@ const PublishPage = () => {
                 formData.images.forEach(image => {
                     data.append('images', image);
                 });
+            } else if (key === 'price' || key === 'mileage') {
+                // Send raw number to backend (remove dots)
+                data.append(key, formData[key].replace(/\./g, ''));
             } else {
                 data.append(key, formData[key]);
             }
@@ -129,7 +143,7 @@ const PublishPage = () => {
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <Calendar className="h-5 w-5 text-gray-400" />
                                     </div>
-                                    <input type="number" name="year" id="year" required min="1900" max={new Date().getFullYear() + 1} className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 border" value={formData.year} onChange={handleChange} />
+                                    <input type="text" name="year" id="year" required maxLength="4" className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 border" value={formData.year} onChange={(e) => setFormData({ ...formData, year: e.target.value.replace(/\D/g, '') })} />
                                 </div>
                             </div>
 
@@ -139,7 +153,7 @@ const PublishPage = () => {
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <Gauge className="h-5 w-5 text-gray-400" />
                                     </div>
-                                    <input type="number" name="mileage" id="mileage" required className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 border" value={formData.mileage} onChange={handleChange} />
+                                    <input type="text" name="mileage" id="mileage" required className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 border" placeholder="Ej: 50.000" value={formData.mileage} onChange={handleChange} />
                                 </div>
                             </div>
 
@@ -149,7 +163,7 @@ const PublishPage = () => {
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <DollarSign className="h-5 w-5 text-gray-400" />
                                     </div>
-                                    <input type="number" name="price" id="price" required className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 border" placeholder="0" value={formData.price} onChange={handleChange} />
+                                    <input type="text" name="price" id="price" required className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 border" placeholder="Ej: 10.500.000" value={formData.price} onChange={handleChange} />
                                 </div>
                             </div>
 
