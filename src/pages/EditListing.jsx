@@ -51,7 +51,6 @@ const EditListing = () => {
                         brand: data.brand,
                         model: data.model,
                         year: data.year,
-                        year: data.year,
                         price: new Intl.NumberFormat('es-CL').format(data.price),
                         mileage: new Intl.NumberFormat('es-CL').format(data.mileage),
                         description: data.description,
