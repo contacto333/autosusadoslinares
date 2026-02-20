@@ -1,9 +1,23 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 
-// For Vercel, we might need the DB in /tmp to allow writes, 
-// but it will reset on cold starts. For an MVP, we use the bundled one.
-const dbPath = path.resolve(__dirname, 'database.sqlite');
+const bundleDbPath = path.resolve(__dirname, 'database.sqlite');
+let dbPath = bundleDbPath;
+
+if (process.env.VERCEL) {
+  dbPath = '/tmp/database.sqlite';
+  // Copy bundled DB to /tmp if needed
+  if (!fs.existsSync(dbPath) && fs.existsSync(bundleDbPath)) {
+    try {
+      fs.copyFileSync(bundleDbPath, dbPath);
+      console.log('Database provisioned in /tmp');
+    } catch (err) {
+      console.error('Database provisioning failed:', err);
+    }
+  }
+}
+
 const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
   if (err) console.error('Database connection error:', err.message);
 });
