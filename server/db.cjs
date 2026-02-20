@@ -1,8 +1,12 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
+// For Vercel, we might need the DB in /tmp to allow writes, 
+// but it will reset on cold starts. For an MVP, we use the bundled one.
 const dbPath = path.resolve(__dirname, 'database.sqlite');
-const db = new sqlite3.Database(dbPath);
+const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, (err) => {
+  if (err) console.error('Database connection error:', err.message);
+});
 
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS users (

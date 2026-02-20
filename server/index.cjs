@@ -44,7 +44,8 @@ const allQuery = (query, params) => {
 };
 
 // Static folder for uploads
-const uploadDir = path.join(__dirname, '../public/uploads');
+// On Vercel, we must use /tmp for temporary writing, but it won't persist.
+const uploadDir = process.env.VERCEL ? '/tmp/uploads' : path.join(__dirname, '../public/uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -292,6 +293,10 @@ app.get('/api/health', (req, res) => {
 //     }
 // });
 
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    app.listen(PORT, () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+    });
+}
+
+module.exports = app;

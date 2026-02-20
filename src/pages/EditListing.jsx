@@ -50,7 +50,6 @@ const EditListing = () => {
                         title: data.title,
                         brand: data.brand,
                         model: data.model,
-                        year: data.year,
                         price: new Intl.NumberFormat('es-CL').format(data.price),
                         mileage: new Intl.NumberFormat('es-CL').format(data.mileage),
                         description: data.description,
@@ -209,7 +208,7 @@ const EditListing = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Kilometraje</label>
                                 <input
-                                    type="number"
+                                    type="text"
                                     name="mileage"
                                     required
                                     className="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2.5 border"
