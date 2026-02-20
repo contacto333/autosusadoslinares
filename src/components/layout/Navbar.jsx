@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Car, PlusCircle, User, LogOut } from 'lucide-react';
+import { Menu, X, Car, PlusCircle, User, LogOut, ShieldCheck } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
@@ -36,6 +36,16 @@ const Navbar = () => {
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Vender mi Auto
                         </Link>
+
+                        {user?.role === 'admin' && (
+                            <Link
+                                to="/admin"
+                                className="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                            >
+                                <ShieldCheck className="mr-2 h-4 w-4" />
+                                Panel Admin
+                            </Link>
+                        )}
 
                         {user ? (
                             <div className="flex items-center gap-4">
@@ -79,6 +89,16 @@ const Navbar = () => {
                             <PlusCircle className="mr-2 h-5 w-5" />
                             Vender mi Auto
                         </Link>
+                        {user?.role === 'admin' && (
+                            <Link
+                                to="/admin"
+                                className="flex items-center px-4 py-2 text-base font-medium text-blue-600 hover:bg-blue-50 rounded-md"
+                                onClick={() => setIsOpen(false)}
+                            >
+                                <ShieldCheck className="mr-3 h-5 w-5" />
+                                Panel de Administración
+                            </Link>
+                        )}
                         <div className="mt-4 pt-4 border-t border-gray-100">
                             {user ? (
                                 <button

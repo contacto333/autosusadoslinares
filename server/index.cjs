@@ -4,6 +4,10 @@ const path = require('path');
 const db = require('./db.cjs');
 const multer = require('multer');
 const fs = require('fs');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+const SECRET_KEY = 'SECRET_KEY'; // In a real app, use process.env.JWT_SECRET
 
 const app = express();
 const PORT = 3000;
@@ -90,12 +94,10 @@ app.post('/api/auth/login', async (req, res) => {
         const user = await getQuery("SELECT * FROM users WHERE email = ?", [email]);
         if (!user) return res.status(404).json({ error: 'User not found' });
 
-        const bcrypt = require('bcryptjs');
         const valid = await bcrypt.compare(password, user.password);
         if (!valid) return res.status(401).json({ error: 'Invalid password' });
 
-        const jwt = require('jsonwebtoken');
-        const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, 'SECRET_KEY', { expiresIn: '7d' });
+        const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, SECRET_KEY, { expiresIn: '7d' });
         res.json({ token, user });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -110,8 +112,6 @@ app.post('/api/listings', upload.array('images', 5), async (req, res) => {
         title, brand, model, year, price, mileage, description,
         contactName, contactPhone, contactEmail, password
     } = req.body;
-
-    const bcrypt = require('bcryptjs');
 
     try {
         let user = await getQuery("SELECT * FROM users WHERE email = ?", [contactEmail]);
@@ -205,11 +205,19 @@ app.patch('/api/listings/:id/status', async (req, res) => {
 });
 
 // Edit Listing
-app.put('/api/listings/:id', async (req, res) => {
+app.put('/api/listings/:id', authenticateToken, async (req, res) => {
     const { title, brand, model, year, price, mileage, description, contactName, contactPhone } = req.body;
     const { id } = req.params;
 
     try {
+        // Check ownership or admin role
+        const listing = await getQuery("SELECT user_id FROM listings WHERE id = ?", [id]);
+        if (!listing) return res.status(404).json({ error: 'Not found' });
+
+        if (listing.user_id !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Access denied. You do not own this listing.' });
+        }
+
         await runQuery(
             `UPDATE listings SET title=?, brand=?, model=?, year=?, price=?, mileage=?, description=?, contact_name=?, contact_phone=? WHERE id=?`,
             [title, brand, model, year, price, mileage, description, contactName, contactPhone, id]
@@ -222,22 +230,31 @@ app.put('/api/listings/:id', async (req, res) => {
 
 // --- ADMIN ---
 
-// Middleware (Simplified for MVP - check role in token)
-const adminOnly = (req, res, next) => {
-    // For MVP, we might skip actual JWT verification middleware here to save time
-    // but in a real app: verify token, check user.role === 'admin'
-    // Let's assume the frontend sends a header 'X-Admin-Auth' or similar for this demo
-    // OR just leave it open for now as this is a local demo.
-    // Better: Basic check.
+// Middleware to verify JWT and check for admin role
+const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
-    if (!authHeader) return res.status(401).json({ error: 'No token' });
-    // const token = authHeader.split(' ')[1];
-    // jwt.verify...
-    next();
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) return res.status(401).json({ error: 'Access denied. No token provided.' });
+
+    jwt.verify(token, SECRET_KEY, (err, user) => {
+        if (err) return res.status(403).json({ error: 'Invalid or expired token.' });
+        req.user = user;
+        next();
+    });
+};
+
+const adminOnly = (req, res, next) => {
+    authenticateToken(req, res, () => {
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Access denied. Admin role required.' });
+        }
+        next();
+    });
 };
 
 // Admin: Get All Listings
-app.get('/api/admin/listings', async (req, res) => {
+app.get('/api/admin/listings', adminOnly, async (req, res) => {
     try {
         const listings = await allQuery("SELECT * FROM listings ORDER BY created_at DESC");
         res.json(listings);
@@ -247,7 +264,7 @@ app.get('/api/admin/listings', async (req, res) => {
 });
 
 // Admin: Delete Listing
-app.delete('/api/admin/listings/:id', async (req, res) => {
+app.delete('/api/admin/listings/:id', adminOnly, async (req, res) => {
     try {
         await runQuery("DELETE FROM listings WHERE id = ?", [req.params.id]);
         res.json({ success: true });
