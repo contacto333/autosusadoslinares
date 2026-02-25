@@ -79,7 +79,8 @@ if (useTurso) {
 }
 
 // Initialization Logic
-const initDb = () => {
+const initDb = async () => {
+  console.log('Initializing database...');
   const queries = [
     `CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -128,17 +129,34 @@ const initDb = () => {
   ];
 
   if (useTurso) {
-    // We can just run them sequentially or in a transaction
-    // But for simplicity, we keep the callback-based run for now
-    queries.forEach(q => db.run(q));
+    try {
+      for (const q of queries) {
+        await new Promise((resolve, reject) => {
+          db.run(q, [], (err) => {
+            if (err) reject(err);
+            else resolve();
+          });
+        });
+      }
+      console.log('Turso Database tables verified/created successfully');
+    } catch (err) {
+      console.error('Error initializing Turso Database:', err);
+    }
   } else {
     db.serialize(() => {
-      queries.forEach(q => db.run(q));
+      queries.forEach(q => {
+        db.run(q, (err) => {
+          if (err) console.error('Error creating table:', err);
+        });
+      });
+      console.log('Local SQLite Database tables verified/created successfully');
     });
   }
 };
 
-initDb();
+// Start initialization
+initDb().catch(err => console.error('Unhandled initialization error:', err));
+
 
 module.exports = db;
 
