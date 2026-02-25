@@ -24,7 +24,9 @@ if (useTurso) {
     run: async (sql, params, callback) => {
       try {
         const result = await client.execute({ sql, args: params || [] });
-        if (callback) callback.call({ lastID: result.lastInsertRowid }, null);
+        // Convert BigInt to Number to avoid serialization errors
+        const lastID = result.lastInsertRowid ? Number(result.lastInsertRowid) : null;
+        if (callback) callback.call({ lastID }, null);
       } catch (err) {
         if (callback) callback(err);
       }
@@ -51,7 +53,9 @@ if (useTurso) {
         run: async (params, callback) => {
           try {
             const result = await client.execute({ sql, args: params || [] });
-            if (callback) callback.call({ lastID: result.lastInsertRowid }, null);
+            // Convert BigInt to Number to avoid serialization errors
+            const lastID = result.lastInsertRowid ? Number(result.lastInsertRowid) : null;
+            if (callback) callback.call({ lastID }, null);
           } catch (err) {
             if (callback) callback(err);
           }
