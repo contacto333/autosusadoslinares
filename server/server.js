@@ -1,5 +1,4 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
@@ -20,36 +19,7 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 // Database Setup
-const db = new sqlite3.Database('./database.sqlite', (err) => {
-    if (err) {
-        console.error('Error opening database', err);
-    } else {
-        console.log('Connected to SQLite database');
-        db.run(`CREATE TABLE IF NOT EXISTS listings (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT,
-            brand TEXT,
-            model TEXT,
-            year INTEGER,
-            price INTEGER,
-            mileage INTEGER,
-            description TEXT,
-            contact_name TEXT,
-            contact_phone TEXT,
-            contact_email TEXT,
-            password TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            status TEXT DEFAULT 'available'
-        )`);
-
-        db.run(`CREATE TABLE IF NOT EXISTS images (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            listing_id INTEGER,
-            url TEXT,
-            FOREIGN KEY(listing_id) REFERENCES listings(id)
-        )`);
-    }
-});
+const db = require('./db.cjs');
 
 // Multer Storage Configuration
 const storage = multer.diskStorage({
