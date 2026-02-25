@@ -5,10 +5,14 @@ const fs = require('fs');
 const isVercel = process.env.VERCEL === '1' || !!process.env.VERCEL;
 const useTurso = !!process.env.TURSO_DATABASE_URL;
 
+console.log('[DB DIAGOSTIC] VERCEL:', process.env.VERCEL);
+console.log('[DB DIAGOSTIC] HAS_TURSO_DATABASE_URL:', !!process.env.TURSO_DATABASE_URL);
+console.log('[DB DIAGOSTIC] HAS_TURSO_AUTH_TOKEN:', !!process.env.TURSO_AUTH_TOKEN);
+
 let db;
 
 if (useTurso) {
-  console.log('Using Turso Database');
+  console.log('[DB LOG] Establishing connection to Turso Cloud...');
   const { createClient } = require('@libsql/client');
   const client = createClient({
     url: process.env.TURSO_DATABASE_URL,
@@ -130,17 +134,25 @@ const initDb = async () => {
 
   if (useTurso) {
     try {
+      console.log('[DB LOG] Turso: Creating/checking tables...');
       for (const q of queries) {
+        // Extract table name from query for logging
+        const tableName = q.match(/CREATE TABLE IF NOT EXISTS (\w+)/)[1];
         await new Promise((resolve, reject) => {
           db.run(q, [], (err) => {
-            if (err) reject(err);
-            else resolve();
+            if (err) {
+              console.error(`[DB ERROR] Failed to initialize table ${tableName}:`, err);
+              reject(err);
+            } else {
+              console.log(`[DB LOG] Table ${tableName} verified.`);
+              resolve();
+            }
           });
         });
       }
-      console.log('Turso Database tables verified/created successfully');
+      console.log('[DB SUCCESS] Turso Database tables verified/created successfully');
     } catch (err) {
-      console.error('Error initializing Turso Database:', err);
+      console.error('[DB CRITICAL ERROR] Error initializing Turso Database:', err);
     }
   } else {
     db.serialize(() => {
