@@ -14,14 +14,14 @@ export default function CompraAutoExpress() {
     const sendWhatsApp = (e) => {
         e.preventDefault();
 
-        const msg = `Hola, quiero cotizar mi auto:
+        const mensaje = `Hola, quiero cotizar mi auto:
 Nombre: ${form.nombre}
 Teléfono: ${form.telefono}
 Auto: ${form.auto}
 Comentarios: ${form.comentarios}`;
 
         window.open(
-            `https://wa.me/56973301653?text=${encodeURIComponent(msg)}`,
+            `https://wa.me/56973301653?text=${encodeURIComponent(mensaje)}`,
             "_blank"
         );
     };
@@ -31,18 +31,20 @@ Comentarios: ${form.comentarios}`;
             {/* HEADER */}
             <header style={styles.header}>
                 <div style={styles.headerInner}>
-                    <div style={styles.logo}>CompraAutoExpress</div>
+                    <div style={styles.logo}>
+                        🚗 <span style={{ color: "#ffb703" }}>CompraAutoExpress</span>
+                    </div>
 
                     <div style={styles.headerRight}>
-                        <span style={{ fontWeight: 600 }}>📞 +56 9 7330 1653</span>
+                        <span>📞 ¡Llámanos! +56 9 7330 1653</span>
 
                         <a
                             href="https://wa.me/56973301653"
                             target="_blank"
                             rel="noreferrer"
-                            style={styles.headerBtn}
+                            style={styles.whatsappTop}
                         >
-                            WhatsApp
+                            Escríbenos por WhatsApp
                         </a>
                     </div>
                 </div>
@@ -50,98 +52,76 @@ Comentarios: ${form.comentarios}`;
 
             {/* HERO */}
             <section style={styles.hero}>
-                <div style={styles.heroInner}>
-                    {/* Texto */}
-                    <div style={styles.heroText}>
-                        <h1 style={styles.title}>
-                            ¡Vende tu auto <span style={styles.highlight}>HOY</span> y recibe
-                            el <span style={styles.highlight}>mejor pago!</span>
-                        </h1>
+                <div style={styles.heroContent}>
+                    <h1 style={styles.title}>
+                        ¡Vende tu auto <span style={styles.yellow}>HOY</span> y recibe el{" "}
+                        <span style={styles.yellow}>mejor pago!</span>
+                    </h1>
 
-                        <ul style={styles.list}>
-                            <li>✔ Cotización inmediata</li>
-                            <li>✔ Dinero en el acto</li>
-                            <li>✔ Transferencia segura</li>
-                        </ul>
+                    <ul style={styles.list}>
+                        <li>✔ Cotización Inmediata</li>
+                        <li>✔ Dinero en el Acto</li>
+                        <li>✔ Transferencia Segura</li>
+                    </ul>
 
-                        <button
-                            style={styles.primaryBtn}
-                            onClick={() =>
-                                document
-                                    .getElementById("form")
-                                    .scrollIntoView({ behavior: "smooth" })
-                            }
-                        >
-                            ¡COTIZA AHORA!
-                        </button>
-                    </div>
-
-                    {/* Formulario (Above the fold) */}
-                    <div id="form" style={styles.formCard}>
-                        <h3>Obtén tu cotización</h3>
-
-                        <form onSubmit={sendWhatsApp} style={styles.form}>
-                            <input
-                                name="nombre"
-                                placeholder="Nombre"
-                                onChange={handleChange}
-                                required
-                            />
-                            <input
-                                name="telefono"
-                                placeholder="Teléfono"
-                                onChange={handleChange}
-                                required
-                            />
-                            <input
-                                name="auto"
-                                placeholder="Marca, Modelo y Año"
-                                onChange={handleChange}
-                                required
-                            />
-                            <textarea
-                                name="comentarios"
-                                placeholder="Comentarios"
-                                onChange={handleChange}
-                            />
-
-                            <button type="submit" style={styles.whatsappBtn}>
-                                Obtener Cotización por WhatsApp
-                            </button>
-
-                            <small style={{ opacity: 0.7 }}>
-                                Te contactamos en minutos
-                            </small>
-                        </form>
-                    </div>
+                    <button
+                        style={styles.cta}
+                        onClick={() =>
+                            document
+                                .getElementById("form")
+                                .scrollIntoView({ behavior: "smooth" })
+                        }
+                    >
+                        ¡COTIZA AHORA!
+                    </button>
                 </div>
             </section>
 
-            {/* BENEFICIOS RÁPIDOS */}
-            <section style={styles.quickBar}>
-                <div>📄 Sin trámites</div>
-                <div>💰 Pago inmediato</div>
-                <div>🔒 Compra segura</div>
+            {/* BENEFICIOS */}
+            <div style={styles.bar}>
+                <div>📋 Sin Trámites Engorrosos</div>
+                <div>💰 Pago al Instante</div>
+                <div>🛡 Compra Segura</div>
+            </div>
+
+            {/* FORMULARIO */}
+            <section id="form" style={styles.formSection}>
+                <h2>Completa el formulario y obtén tu cotización al instante</h2>
+
+                <form style={styles.form} onSubmit={sendWhatsApp}>
+                    <input name="nombre" placeholder="Nombre" onChange={handleChange} required />
+                    <input name="telefono" placeholder="Teléfono" onChange={handleChange} required />
+                    <input name="auto" placeholder="Marca, Modelo y Año" onChange={handleChange} required />
+                    <textarea name="comentarios" placeholder="Comentarios" onChange={handleChange} />
+
+                    <button type="submit" style={styles.whatsappBtn}>
+                        Obtener Cotización por WhatsApp
+                    </button>
+
+                    <p style={styles.microcopy}>
+                        Te contactaremos por WhatsApp con tu oferta de inmediato.
+                    </p>
+                </form>
             </section>
 
-            {/* POR QUÉ ELEGIRNOS */}
+            {/* POR QUE ELEGIRNOS */}
             <section style={styles.features}>
                 <h2>¿Por qué elegirnos?</h2>
 
-                <div style={styles.grid}>
-                    <div style={styles.card}>
+                <div style={styles.featureGrid}>
+                    <div style={styles.feature}>
                         <h4>⏱ Rápido y Seguro</h4>
-                        <p>Compra en minutos sin complicaciones.</p>
+                        <p>Venta en minutos, sin complicaciones.</p>
                     </div>
 
-                    <div style={styles.card}>
-                        <h4>💰 Mejor Precio</h4>
-                        <p>Evaluación profesional del mercado.</p>
+                    <div style={styles.feature}>
+                        <h4>🤝 Mejor Precio</h4>
+                        <p>Tasamos tu auto con la mejor oferta.</p>
                     </div>
 
-                    <div style={styles.card}>
-                        <h4>🤝 Atención Profesional</h4>
-                        <p>Asesoría clara y transparente.</p>
+                    <div style={styles.feature}>
+                        <h4>👍 Atención Profesional</h4>
+                        <p>Asesoría experta, trato transparente.</p>
                     </div>
                 </div>
             </section>
@@ -153,12 +133,12 @@ Comentarios: ${form.comentarios}`;
                 <p>© 2026 CompraAutoExpress</p>
             </footer>
 
-            {/* BOTÓN FLOTANTE WHATSAPP */}
+            {/* BOTON FLOTANTE */}
             <a
                 href="https://wa.me/56973301653"
                 target="_blank"
                 rel="noreferrer"
-                style={styles.floating}
+                style={styles.float}
             >
                 WhatsApp
             </a>
@@ -166,21 +146,13 @@ Comentarios: ${form.comentarios}`;
     );
 }
 
-/* ================== STYLES ================== */
-
 const styles = {
-    page: {
-        fontFamily: "Arial, sans-serif",
-        background: "#f5f7fa"
-    },
+    page: { fontFamily: "Arial, sans-serif", background: "#f3f5f8" },
 
     header: {
-        background: "#0d3b66",
+        background: "#0b3a75",
         color: "#fff",
-        padding: "12px 20px",
-        position: "sticky",
-        top: 0,
-        zIndex: 10
+        padding: "14px 20px"
     },
 
     headerInner: {
@@ -192,102 +164,53 @@ const styles = {
         alignItems: "center"
     },
 
-    logo: {
-        fontSize: 22,
-        fontWeight: "bold"
-    },
+    logo: { fontSize: 22, fontWeight: "bold" },
 
-    headerRight: {
-        display: "flex",
-        gap: 15,
-        alignItems: "center"
-    },
+    headerRight: { display: "flex", gap: 15, alignItems: "center" },
 
-    headerBtn: {
+    whatsappTop: {
         background: "#25D366",
         padding: "8px 14px",
-        borderRadius: 6,
         color: "#fff",
+        borderRadius: 6,
         textDecoration: "none",
         fontWeight: "bold"
     },
 
     hero: {
         background:
-            "linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.45)), url('https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=1600') center/cover",
-        padding: "60px 20px",
-        color: "#fff"
+            "linear-gradient(rgba(11,58,117,0.85), rgba(11,58,117,0.85)), url('/hero.jpg') center/cover",
+        padding: "80px 20px",
+        color: "#fff",
+        textAlign: "center"
     },
 
-    heroInner: {
-        maxWidth: 1100,
-        margin: "auto",
-        display: "flex",
-        gap: 40,
-        flexWrap: "wrap",
-        alignItems: "center"
-    },
+    heroContent: { maxWidth: 900, margin: "auto" },
 
-    heroText: {
-        flex: 1,
-        minWidth: 280
-    },
+    title: { fontSize: 42, fontWeight: 700, marginBottom: 20 },
 
-    title: {
-        fontSize: 38,
-        marginBottom: 20
-    },
-
-    highlight: {
-        color: "#ffc107"
-    },
+    yellow: { color: "#ffb703" },
 
     list: {
+        listStyle: "none",
         lineHeight: 1.8,
-        marginBottom: 20
+        marginBottom: 25,
+        fontSize: 18
     },
 
-    primaryBtn: {
+    cta: {
         background: "#ff8c00",
         border: "none",
-        padding: "14px 24px",
+        padding: "14px 30px",
         color: "#fff",
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: "bold",
         borderRadius: 6,
         cursor: "pointer"
     },
 
-    formCard: {
-        flex: 1,
-        minWidth: 300,
-        background: "#fff",
-        color: "#333",
-        padding: 25,
-        borderRadius: 10,
-        boxShadow: "0 8px 25px rgba(0,0,0,0.2)"
-    },
-
-    form: {
-        display: "flex",
-        flexDirection: "column",
-        gap: 10,
-        marginTop: 10
-    },
-
-    whatsappBtn: {
-        background: "#25D366",
-        color: "#fff",
-        padding: 14,
-        border: "none",
-        borderRadius: 6,
-        fontSize: 16,
-        fontWeight: "bold",
-        cursor: "pointer"
-    },
-
-    quickBar: {
-        background: "#e9edf2",
+    bar: {
+        background: "#e6ebf1",
         display: "flex",
         justifyContent: "center",
         gap: 40,
@@ -296,38 +219,65 @@ const styles = {
         fontWeight: 600
     },
 
-    features: {
-        maxWidth: 1100,
+    formSection: {
+        maxWidth: 700,
         margin: "40px auto",
         textAlign: "center",
         padding: "0 20px"
     },
 
-    grid: {
+    form: {
         display: "flex",
-        gap: 20,
+        flexDirection: "column",
+        gap: 12,
+        marginTop: 20
+    },
+
+    whatsappBtn: {
+        background: "#1fa855",
+        color: "#fff",
+        padding: 16,
+        border: "none",
+        borderRadius: 6,
+        fontSize: 18,
+        fontWeight: "bold",
+        cursor: "pointer"
+    },
+
+    microcopy: { marginTop: 10, color: "#666" },
+
+    features: {
+        maxWidth: 1000,
+        margin: "40px auto",
+        textAlign: "center",
+        padding: "0 20px"
+    },
+
+    featureGrid: {
+        display: "flex",
+        gap: 30,
         flexWrap: "wrap",
         justifyContent: "center",
         marginTop: 20
     },
 
-    card: {
+    feature: {
         background: "#fff",
         padding: 20,
         borderRadius: 10,
-        boxShadow: "0 3px 10px rgba(0,0,0,0.1)",
-        minWidth: 240
+        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+        minWidth: 250
     },
 
     footer: {
-        background: "#0d3b66",
+        background: "linear-gradient(#0b3a75, #06244a)",
         color: "#fff",
         textAlign: "center",
-        padding: 20,
+        padding: 25,
         marginTop: 40
     },
 
-    floating: {
+    float: {
         position: "fixed",
         bottom: 20,
         right: 20,
@@ -337,6 +287,6 @@ const styles = {
         borderRadius: 50,
         fontWeight: "bold",
         textDecoration: "none",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.3)"
+        boxShadow: "0 6px 18px rgba(0,0,0,0.3)"
     }
 };
