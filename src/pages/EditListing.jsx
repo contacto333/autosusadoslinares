@@ -3,6 +3,7 @@ import { Camera, Car, MapPin, DollarSign, Calendar, FileText, User, Phone, Mail,
 import { API_URL } from '../api';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import MakeAutocomplete from '../components/common/MakeAutocomplete';
+import ModelAutocomplete from '../components/common/ModelAutocomplete';
 
 const EditListing = () => {
     const { id } = useParams();
@@ -177,13 +178,11 @@ const EditListing = () => {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Modelo</label>
-                                <input
-                                    type="text"
-                                    name="model"
-                                    required
-                                    className="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2.5 border"
+                                <ModelAutocomplete
+                                    brand={formData.brand}
                                     value={formData.model}
                                     onChange={handleChange}
+                                    className="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2.5 border"
                                 />
                             </div>
                             <div>
