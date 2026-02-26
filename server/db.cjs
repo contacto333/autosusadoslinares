@@ -145,10 +145,10 @@ const initDb = async () => {
         await new Promise((resolve, reject) => {
           db.run(q, [], (err) => {
             if (err) {
-              console.error(\`[DB ERROR] Failed to initialize table \${tableName}:\`, err);
+              console.error(`[DB ERROR] Failed to initialize table ${tableName}:`, err);
               reject(err);
             } else {
-              console.log(\`[DB LOG] Table \${tableName} verified.\`);
+              console.log(`[DB LOG] Table ${tableName} verified.`);
               resolve();
             }
           });
