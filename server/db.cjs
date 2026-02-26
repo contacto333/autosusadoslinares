@@ -155,6 +155,36 @@ const initDb = async () => {
         });
       }
       console.log('[DB SUCCESS] Turso Database tables verified/created successfully');
+
+      // Seed Admin User if not exists (Synchronous/Awaited flow)
+      console.log('[DB LOG] Checking for admin user...');
+      const adminEmail = 'admin@autoslinares.cl';
+      const bcrypt = require('bcryptjs');
+      const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+
+      try {
+        const row = await new Promise((resolve, reject) => {
+          db.get("SELECT * FROM users WHERE email = ?", [adminEmail], (err, row) => {
+            if (err) reject(err); else resolve(row);
+          });
+        });
+
+        if (!row) {
+          console.log('[DB LOG] Admin user missing. Seeding...');
+          const hashedPassword = await bcrypt.hash(adminPassword, 10);
+          await new Promise((resolve, reject) => {
+            db.run("INSERT INTO users (email, password, role) VALUES (?, ?, ?)", [adminEmail, hashedPassword, 'admin'], (err) => {
+              if (err) reject(err); else resolve();
+            });
+          });
+          console.log('[DB SUCCESS] Admin user seeded successfully.');
+        } else {
+          console.log('[DB LOG] Admin user already exists.');
+        }
+      } catch (seedErr) {
+        console.error('[DB ERROR] Error seeding admin:', seedErr);
+      }
+
     } catch (err) {
       console.error('[DB CRITICAL ERROR] Error initializing Turso Database:', err);
     }
@@ -166,6 +196,16 @@ const initDb = async () => {
         });
       });
       console.log('Local SQLite Database tables verified/created successfully');
+
+      // Also seed local for consistency
+      const adminEmail = 'admin@autoslinares.cl';
+      const bcrypt = require('bcryptjs');
+      db.get("SELECT * FROM users WHERE email = ?", [adminEmail], async (err, row) => {
+        if (!row) {
+          const hashedPassword = await bcrypt.hash('admin123', 10);
+          db.run("INSERT INTO users (email, password, role) VALUES (?, ?, ?)", [adminEmail, hashedPassword, 'admin']);
+        }
+      });
     });
   }
 };

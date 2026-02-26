@@ -6,8 +6,30 @@ const multer = require('multer');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const cloudinary = require('cloudinary').v2;
 
-const SECRET_KEY = 'SECRET_KEY'; // In a real app, use process.env.JWT_SECRET
+const SECRET_KEY = process.env.JWT_SECRET || 'SECRET_KEY';
+
+console.log('[CLOUDINARY DIAGNOSTIC] HAS_CLOUD_NAME:', !!process.env.CLOUDINARY_CLOUD_NAME);
+console.log('[CLOUDINARY DIAGNOSTIC] HAS_API_KEY:', !!process.env.CLOUDINARY_API_KEY);
+console.log('[CLOUDINARY DIAGNOSTIC] HAS_API_SECRET:', !!process.env.CLOUDINARY_API_SECRET);
+
+// Cloudinary Configuration
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Helper to upload to Cloudinary
+const uploadToCloudinary = (filePath) => {
+    return new Promise((resolve, reject) => {
+        cloudinary.uploader.upload(filePath, { folder: 'autos_linares' }, (error, result) => {
+            if (error) reject(error);
+            else resolve(result.secure_url);
+        });
+    });
+};
 
 const app = express();
 const PORT = 3000;
@@ -169,8 +191,14 @@ app.post('/api/listings', upload.array('images', 5), async (req, res) => {
 
         if (req.files) {
             for (const file of req.files) {
-                const url = '/uploads/' + file.filename;
-                await runQuery("INSERT INTO images (listing_id, url) VALUES (?, ?)", [listingId, url]);
+                try {
+                    const url = await uploadToCloudinary(file.path);
+                    await runQuery("INSERT INTO images (listing_id, url) VALUES (?, ?)", [listingId, url]);
+                    // Clean up temp file
+                    if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+                } catch (cloudErr) {
+                    console.error('Cloudinary upload error:', cloudErr);
+                }
             }
         }
 
@@ -291,8 +319,11 @@ app.get('/api/admin/banners', async (req, res) => {
 app.post('/api/admin/banners', upload.single('image'), async (req, res) => {
     const { linkUrl } = req.body;
     try {
-        const url = '/uploads/' + req.file.filename;
+        if (!req.file) return res.status(400).json({ error: 'No image provided' });
+        const url = await uploadToCloudinary(req.file.path);
         await runQuery("INSERT INTO banners (image_url, link_url) VALUES (?, ?)", [url, linkUrl]);
+        // Clean up temp file
+        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
