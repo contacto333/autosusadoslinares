@@ -8,12 +8,16 @@ const CarDetails = () => {
     const navigate = useNavigate();
     const [car, setCar] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [selectedImage, setSelectedImage] = useState(null);
 
     useEffect(() => {
         fetch(`${API_URL}/api/listings/${id}`)
             .then(res => res.json())
             .then(data => {
                 setCar(data);
+                if (data.images && data.images.length > 0) {
+                    setSelectedImage(data.images[0].url);
+                }
                 setLoading(false);
             })
             .catch(err => {
@@ -25,8 +29,8 @@ const CarDetails = () => {
     if (loading) return <div className="p-10 text-center">Cargando...</div>;
     if (!car || car.error) return <div className="p-10 text-center">Auto no encontrado.</div>;
 
-    const mainImage = car.images && car.images.length > 0 ? car.images[0].url : null;
-    const otherImages = car.images ? car.images.slice(1) : [];
+    const mainImage = selectedImage;
+    const allImages = car.images || [];
 
     const userJson = localStorage.getItem('user');
     const user = userJson ? JSON.parse(userJson) : null;
@@ -79,9 +83,14 @@ const CarDetails = () => {
                         </div>
                         {/* Thumbnails */}
                         <div className="grid grid-cols-4 gap-2">
-                            {otherImages.map((img, idx) => (
-                                <div key={idx} className="aspect-w-16 aspect-h-10 bg-gray-200 rounded-lg overflow-hidden">
-                                    <img src={`${API_URL}${img.url}`} alt={`Foto ${idx + 2}`} className="w-full h-full object-cover" />
+                            {allImages.map((img, idx) => (
+                                <div
+                                    key={idx}
+                                    onClick={() => setSelectedImage(img.url)}
+                                    className={`aspect-w-16 aspect-h-10 bg-gray-200 rounded-lg overflow-hidden cursor-pointer transition-all border-2 ${selectedImage === img.url ? 'border-blue-500 ring-2 ring-blue-200' : 'border-transparent hover:border-gray-300'
+                                        }`}
+                                >
+                                    <img src={`${API_URL}${img.url}`} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
                                 </div>
                             ))}
                         </div>
