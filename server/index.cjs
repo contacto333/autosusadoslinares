@@ -297,10 +297,17 @@ app.get('/api/admin/listings', adminOnly, async (req, res) => {
 
 // Admin: Delete Listing
 app.delete('/api/admin/listings/:id', adminOnly, async (req, res) => {
+    const { id } = req.params;
     try {
-        await runQuery("DELETE FROM listings WHERE id = ?", [req.params.id]);
+        // Manually delete related records first to handle cases where ON DELETE CASCADE 
+        // wasn't active at creation time.
+        await runQuery("DELETE FROM featured WHERE listing_id = ?", [id]);
+        await runQuery("DELETE FROM images WHERE listing_id = ?", [id]);
+        await runQuery("DELETE FROM listings WHERE id = ?", [id]);
+
         res.json({ success: true });
     } catch (err) {
+        console.error('Delete error:', err);
         res.status(500).json({ error: err.message });
     }
 });

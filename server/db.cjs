@@ -120,7 +120,7 @@ const initDb = async () => {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             listing_id INTEGER,
             url TEXT,
-            FOREIGN KEY(listing_id) REFERENCES listings(id)
+            FOREIGN KEY(listing_id) REFERENCES listings(id) ON DELETE CASCADE
         )`,
     `CREATE TABLE IF NOT EXISTS banners (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -132,7 +132,7 @@ const initDb = async () => {
     `CREATE TABLE IF NOT EXISTS featured (
             listing_id INTEGER UNIQUE,
             order_index INTEGER,
-            FOREIGN KEY(listing_id) REFERENCES listings(id)
+            FOREIGN KEY(listing_id) REFERENCES listings(id) ON DELETE CASCADE
         )`
   ];
 
@@ -145,10 +145,10 @@ const initDb = async () => {
         await new Promise((resolve, reject) => {
           db.run(q, [], (err) => {
             if (err) {
-              console.error(`[DB ERROR] Failed to initialize table ${tableName}:`, err);
+              console.error(\`[DB ERROR] Failed to initialize table \${tableName}:\`, err);
               reject(err);
             } else {
-              console.log(`[DB LOG] Table ${tableName} verified.`);
+              console.log(\`[DB LOG] Table \${tableName} verified.\`);
               resolve();
             }
           });
@@ -215,4 +215,3 @@ initDb().catch(err => console.error('Unhandled initialization error:', err));
 
 
 module.exports = db;
-
