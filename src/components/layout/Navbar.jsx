@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Car, PlusCircle, User, LogOut, ShieldCheck } from 'lucide-react';
+import { Menu, X, Car, PlusCircle, User, LogOut, ShieldCheck, Zap } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
@@ -29,6 +29,14 @@ const Navbar = () => {
                     </div>
 
                     <div className="hidden md:flex items-center space-x-4">
+                        <Link
+                            to="/compra-auto-express"
+                            className="inline-flex items-center px-4 py-2 text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 transition-all border border-purple-200 rounded-full hover:shadow-sm"
+                        >
+                            <Zap className="mr-1 h-4 w-4 text-purple-600" />
+                            CompraAutoExpress
+                        </Link>
+
                         <Link
                             to="/publicar"
                             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-full text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all shadow-md hover:shadow-lg"
@@ -81,6 +89,14 @@ const Navbar = () => {
             {isOpen && (
                 <div className="md:hidden animate-fade-in-down">
                     <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-b border-gray-100 shadow-lg">
+                        <Link
+                            to="/compra-auto-express"
+                            className="w-full flex items-center justify-center px-4 py-2 border border-purple-200 text-base font-bold rounded-md text-purple-700 bg-purple-50 hover:bg-purple-100 mb-2 transition-colors"
+                            onClick={() => setIsOpen(false)}
+                        >
+                            <Zap className="mr-2 h-5 w-5" />
+                            CompraAutoExpress
+                        </Link>
                         <Link
                             to="/publicar"
                             className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"

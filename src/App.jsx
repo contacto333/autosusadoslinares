@@ -10,6 +10,7 @@ import CarDetails from './pages/CarDetails';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
 import EditListing from './pages/EditListing';
+import CompraAutoExpress from './pages/CompraAutoExpress';
 
 function App() {
     return (
@@ -22,6 +23,7 @@ function App() {
                     <Route path="/admin" element={<Admin />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/editar/:id" element={<EditListing />} />
+                    <Route path="/compra-auto-express" element={<CompraAutoExpress />} />
                 </Routes>
             </Layout>
         </Router>
