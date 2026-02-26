@@ -3,6 +3,7 @@ import { Upload, DollarSign, PenTool, Phone, User, Calendar, Gauge } from 'lucid
 
 import { API_URL } from '../api';
 import { useNavigate } from 'react-router-dom';
+import MakeAutocomplete from '../components/common/MakeAutocomplete';
 
 const PublishPage = () => {
     const navigate = useNavigate();
@@ -129,7 +130,11 @@ const PublishPage = () => {
 
                             <div className="sm:col-span-3">
                                 <label htmlFor="brand" className="block text-sm font-medium text-gray-700">Marca</label>
-                                <input type="text" name="brand" id="brand" required className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md py-2 border px-3" value={formData.brand} onChange={handleChange} />
+                                <MakeAutocomplete
+                                    value={formData.brand}
+                                    onChange={handleChange}
+                                    className="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md py-2 border px-3"
+                                />
                             </div>
 
                             <div className="sm:col-span-3">

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Camera, Car, MapPin, DollarSign, Calendar, FileText, User, Phone, Mail, Save, ArrowLeft } from 'lucide-react';
 import { API_URL } from '../api';
 import { useNavigate, useParams, Link } from 'react-router-dom';
+import MakeAutocomplete from '../components/common/MakeAutocomplete';
 
 const EditListing = () => {
     const { id } = useParams();
@@ -168,13 +169,10 @@ const EditListing = () => {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Marca</label>
-                                <input
-                                    type="text"
-                                    name="brand"
-                                    required
-                                    className="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2.5 border"
+                                <MakeAutocomplete
                                     value={formData.brand}
                                     onChange={handleChange}
+                                    className="block w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2.5 border"
                                 />
                             </div>
                             <div>
