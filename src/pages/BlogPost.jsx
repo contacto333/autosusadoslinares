@@ -11,6 +11,39 @@ const BlogPost = () => {
 
     useEffect(() => {
         setLoading(true);
+        const staticPosts = ['articulo_dummy', 'camionetas_maule'];
+
+        if (staticPosts.includes(slug)) {
+            // Cargar artículo estático desde carpeta public
+            fetch(`/blog/${slug}.html`)
+                .then(res => {
+                    if (!res.ok) throw new Error('Error al cargar el archivo estático');
+                    return res.text();
+                })
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const title = doc.querySelector('title')?.innerText || 'Artículo';
+                    const bodyContent = doc.body.innerHTML;
+
+                    setPost({
+                        title: title,
+                        content: bodyContent,
+                        created_at: slug === 'camionetas_maule' ? '2026-02-27T15:00:00Z' : new Date().toISOString(),
+                        excerpt: slug === 'camionetas_maule'
+                            ? 'Descubre cuáles son los modelos preferidos por los agricultores de la región del Maule para las faenas más exigentes.'
+                            : 'Este es un artículo de prueba cargado desde un archivo HTML estático en el servidor.',
+                        cover_image: slug === 'camionetas_maule' ? '/blog/images/hilux.png' : null
+                    });
+                    setLoading(false);
+                })
+                .catch(err => {
+                    setError(err.message);
+                    setLoading(false);
+                });
+            return;
+        }
+
         fetch(`${API_URL}/api/blog/${slug}`)
             .then(res => { if (!res.ok) throw new Error('Artículo no encontrado'); return res.json(); })
             .then(data => { setPost(data); setLoading(false); })

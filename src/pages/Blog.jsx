@@ -11,7 +11,29 @@ const Blog = () => {
     useEffect(() => {
         fetch(`${API_URL}/api/blog`)
             .then(res => { if (!res.ok) throw new Error('Error al cargar el blog'); return res.json(); })
-            .then(data => { setPosts(data); setLoading(false); })
+            .then(data => {
+                // Articulos estáticos
+                const staticPosts = [
+                    {
+                        id: 'static-camionetas-1',
+                        title: 'Las 5 Camionetas Más Buscadas en el Maule para el Trabajo Agrícola',
+                        slug: 'camionetas_maule',
+                        excerpt: 'Descubre cuáles son los modelos preferidos por los agricultores de la región del Maule para las faenas más exigentes.',
+                        cover_image: '/blog/images/hilux.png',
+                        created_at: new Date('2026-02-27T15:00:00Z').toISOString()
+                    },
+                    {
+                        id: 'dummy-static-1',
+                        title: 'Artículo Dummy Estático',
+                        slug: 'articulo_dummy',
+                        excerpt: 'Este es un artículo de prueba cargado desde un archivo HTML estático en el servidor.',
+                        cover_image: null,
+                        created_at: new Date('2026-02-27T10:00:00Z').toISOString()
+                    }
+                ];
+                setPosts([...staticPosts, ...data]);
+                setLoading(false);
+            })
             .catch(err => { setError(err.message); setLoading(false); });
     }, []);
 
