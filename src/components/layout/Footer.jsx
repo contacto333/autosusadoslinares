@@ -15,16 +15,17 @@ const Footer = () => {
                     <div>
                         <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Enlaces Rápidos</h4>
                         <ul className="space-y-2">
-                            <li><a href="#" className="text-gray-500 hover:text-blue-600 text-sm transition-colors">Inicio</a></li>
-                            <li><a href="#" className="text-gray-500 hover:text-blue-600 text-sm transition-colors">Buscar Autos</a></li>
-                            <li><a href="#" className="text-gray-500 hover:text-blue-600 text-sm transition-colors">Vender</a></li>
+                            <li><a href="/" className="text-gray-500 hover:text-blue-600 text-sm transition-colors">Inicio</a></li>
+                            <li><a href="/#search" className="text-gray-500 hover:text-blue-600 text-sm transition-colors">Buscar Autos</a></li>
+                            <li><a href="/publicar" className="text-gray-500 hover:text-blue-600 text-sm transition-colors">Vender</a></li>
+                            <li><a href="/blog" className="text-gray-500 hover:text-blue-600 text-sm transition-colors">Blog</a></li>
                         </ul>
                     </div>
                     <div>
                         <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Contacto</h4>
                         <ul className="space-y-2">
-                            <li className="text-gray-500 text-sm">support@autoslinares.cl</li>
-                            <li className="text-gray-500 text-sm">+56 9 1234 5678</li>
+                            <li className="text-gray-500 text-sm">contacto@ptv.cl</li>
+                            <li className="text-gray-500 text-sm">+56 9 4463 9884</li>
                             <div className="flex space-x-4 mt-4">
                                 <a href="#" className="text-gray-400 hover:text-blue-600 transition-colors">
                                     <Facebook className="h-5 w-5" />

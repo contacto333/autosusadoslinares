@@ -1,0 +1,1 @@
+Comando para ejecutar como admin: Set-ExecutionPolicy RemoteSigned -Scope CurrentUser

@@ -11,6 +11,8 @@ import Admin from './pages/Admin';
 import Login from './pages/Login';
 import EditListing from './pages/EditListing';
 import CompraAutoExpress from './pages/CompraAutoExpress';
+import Blog from './pages/Blog';
+import BlogPost from './pages/BlogPost';
 
 function App() {
     return (
@@ -24,6 +26,8 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/editar/:id" element={<EditListing />} />
                     <Route path="/compra-auto-express" element={<CompraAutoExpress />} />
+                    <Route path="/blog" element={<Blog />} />
+                    <Route path="/blog/:slug" element={<BlogPost />} />
                 </Routes>
             </Layout>
         </Router>

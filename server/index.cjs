@@ -341,6 +341,157 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date() });
 });
 
+// --- BLOG ---
+
+// Check if Cloudinary is configured
+const cloudinaryConfigured = !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
+
+const safeUploadToCloudinary = async (filePath) => {
+    if (!cloudinaryConfigured) {
+        console.warn('[BLOG] Cloudinary not configured. Skipping image upload.');
+        return null;
+    }
+    return uploadToCloudinary(filePath);
+};
+
+// Helper: generate slug from title
+const generateSlug = (title) => {
+    return title
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove accents
+        .replace(/[^a-z0-9\s-]/g, '')
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
+};
+
+// Public: Get published blog posts
+app.get('/api/blog', async (req, res) => {
+    try {
+        const posts = await allQuery(
+            `SELECT id, title, slug, excerpt, cover_image, created_at 
+             FROM blog_posts WHERE published = 1 ORDER BY created_at DESC`,
+            []
+        );
+        res.json(posts);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Public: Get single blog post by slug
+app.get('/api/blog/:slug', async (req, res) => {
+    try {
+        const post = await getQuery(
+            `SELECT * FROM blog_posts WHERE slug = ? AND published = 1`,
+            [req.params.slug]
+        );
+        if (!post) return res.status(404).json({ error: 'Artículo no encontrado' });
+        res.json(post);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin: Get all blog posts (including drafts)
+app.get('/api/admin/blog', adminOnly, async (req, res) => {
+    try {
+        const posts = await allQuery(
+            `SELECT id, title, slug, excerpt, cover_image, published, created_at, updated_at 
+             FROM blog_posts ORDER BY created_at DESC`,
+            []
+        );
+        res.json(posts);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin: Create blog post
+app.post('/api/admin/blog', adminOnly, upload.single('cover_image'), async (req, res) => {
+    const { title, excerpt, content, published } = req.body;
+    if (!title || !content) return res.status(400).json({ error: 'Título y contenido son requeridos' });
+
+    try {
+        let coverImageUrl = null;
+        if (req.file) {
+            coverImageUrl = await safeUploadToCloudinary(req.file.path);
+            if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        }
+
+        const baseSlug = generateSlug(title);
+        let slug = baseSlug;
+        let suffix = 1;
+        // Ensure unique slug
+        while (true) {
+            const existing = await getQuery('SELECT id FROM blog_posts WHERE slug = ?', [slug]);
+            if (!existing) break;
+            slug = `${baseSlug}-${suffix++}`;
+        }
+
+        const result = await runQuery(
+            `INSERT INTO blog_posts (title, slug, excerpt, content, cover_image, published) VALUES (?, ?, ?, ?, ?, ?)`,
+            [title, slug, excerpt || null, content, coverImageUrl, published === '1' || published === true ? 1 : 0]
+        );
+        res.json({ success: true, id: result.lastID, slug });
+    } catch (err) {
+        console.error('Blog create error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin: Update blog post
+app.put('/api/admin/blog/:id', adminOnly, upload.single('cover_image'), async (req, res) => {
+    const { title, excerpt, content, published } = req.body;
+    const { id } = req.params;
+    if (!title || !content) return res.status(400).json({ error: 'Título y contenido son requeridos' });
+
+    try {
+        const existing = await getQuery('SELECT * FROM blog_posts WHERE id = ?', [id]);
+        if (!existing) return res.status(404).json({ error: 'Artículo no encontrado' });
+
+        let coverImageUrl = existing.cover_image;
+        if (req.file) {
+            const uploaded = await safeUploadToCloudinary(req.file.path);
+            if (uploaded) coverImageUrl = uploaded;
+            if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        }
+
+        // Re-generate slug only if title changed
+        let slug = existing.slug;
+        if (title !== existing.title) {
+            const baseSlug = generateSlug(title);
+            slug = baseSlug;
+            let suffix = 1;
+            while (true) {
+                const conflict = await getQuery('SELECT id FROM blog_posts WHERE slug = ? AND id != ?', [slug, id]);
+                if (!conflict) break;
+                slug = `${baseSlug}-${suffix++}`;
+            }
+        }
+
+        await runQuery(
+            `UPDATE blog_posts SET title=?, slug=?, excerpt=?, content=?, cover_image=?, published=?, updated_at=datetime('now') WHERE id=?`,
+            [title, slug, excerpt || null, content, coverImageUrl, published === '1' || published === true ? 1 : 0, id]
+        );
+        res.json({ success: true, slug });
+    } catch (err) {
+        console.error('Blog update error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin: Delete blog post
+app.delete('/api/admin/blog/:id', adminOnly, async (req, res) => {
+    try {
+        await runQuery('DELETE FROM blog_posts WHERE id = ?', [req.params.id]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
 // SPA Fallback for non-API routes
 // This allows React Router to handle page refreshes in production
 // app.get('*path', (req, res) => {

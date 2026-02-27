@@ -133,6 +133,17 @@ const initDb = async () => {
             listing_id INTEGER UNIQUE,
             order_index INTEGER,
             FOREIGN KEY(listing_id) REFERENCES listings(id) ON DELETE CASCADE
+        )`,
+    `CREATE TABLE IF NOT EXISTS blog_posts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            slug TEXT UNIQUE NOT NULL,
+            excerpt TEXT,
+            content TEXT NOT NULL,
+            cover_image TEXT,
+            published INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`
   ];
 
