@@ -397,7 +397,7 @@ app.get('/api/blog/:slug', async (req, res) => {
 app.get('/api/admin/blog', adminOnly, async (req, res) => {
     try {
         const posts = await allQuery(
-            `SELECT id, title, slug, excerpt, cover_image, published, created_at, updated_at 
+            `SELECT id, title, slug, excerpt, content, cover_image, published, created_at, updated_at 
              FROM blog_posts ORDER BY created_at DESC`,
             []
         );
