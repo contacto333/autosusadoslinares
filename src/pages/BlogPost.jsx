@@ -11,7 +11,7 @@ const BlogPost = () => {
 
     useEffect(() => {
         setLoading(true);
-        const staticPosts = ['articulo_dummy', 'camionetas_maule'];
+        const staticPosts = ['articulo_dummy', 'camionetas_maule', 'guia_transferencia', 'autos_economicos_2026'];
 
         if (staticPosts.includes(slug)) {
             // Cargar artículo estático desde carpeta public
@@ -26,15 +26,31 @@ const BlogPost = () => {
                     const title = doc.querySelector('title')?.innerText || 'Artículo';
                     const bodyContent = doc.body.innerHTML;
 
-                    setPost({
+                    let metadata = {
                         title: title,
                         content: bodyContent,
-                        created_at: slug === 'camionetas_maule' ? '2026-02-27T15:00:00Z' : new Date().toISOString(),
-                        excerpt: slug === 'camionetas_maule'
-                            ? 'Descubre cuáles son los modelos preferidos por los agricultores de la región del Maule para las faenas más exigentes.'
-                            : 'Este es un artículo de prueba cargado desde un archivo HTML estático en el servidor.',
-                        cover_image: slug === 'camionetas_maule' ? '/blog/images/hilux.png' : null
-                    });
+                        created_at: new Date().toISOString(),
+                        excerpt: '',
+                        cover_image: null
+                    };
+
+                    if (slug === 'camionetas_maule') {
+                        metadata.created_at = '2026-02-27T15:00:00Z';
+                        metadata.excerpt = 'Descubre cuáles son los modelos preferidos por los agricultores de la región del Maule para las faenas más exigentes.';
+                        metadata.cover_image = '/blog/images/hilux.png';
+                    } else if (slug === 'guia_transferencia') {
+                        metadata.created_at = '2026-02-27T15:20:00Z';
+                        metadata.excerpt = 'Toda la información legal y administrativa que necesitas para comprar o vender tu vehículo en la ciudad de Linares.';
+                        metadata.cover_image = '/blog/images/notaria.png';
+                    } else if (slug === 'autos_economicos_2026') {
+                        metadata.created_at = '2026-02-28T20:00:00Z';
+                        metadata.excerpt = 'Descubre los modelos que mejor equilibran precio, mantenimiento y ahorro de combustible para este año.';
+                        metadata.cover_image = '/blog/images/swift.jpg';
+                    } else {
+                        metadata.excerpt = 'Este es un artículo de prueba cargado desde un archivo HTML estático en el servidor.';
+                    }
+
+                    setPost(metadata);
                     setLoading(false);
                 })
                 .catch(err => {

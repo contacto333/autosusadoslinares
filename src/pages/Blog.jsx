@@ -15,6 +15,22 @@ const Blog = () => {
                 // Articulos estáticos
                 const staticPosts = [
                     {
+                        id: 'static-economicos-1',
+                        title: 'Los 10 autos usados más económicos y confiables en Chile (2026)',
+                        slug: 'autos_economicos_2026',
+                        excerpt: 'Descubre los modelos que mejor equilibran precio, mantenimiento y ahorro de combustible para este año.',
+                        cover_image: '/blog/images/swift.jpg',
+                        created_at: new Date('2026-02-28T20:00:00Z').toISOString()
+                    },
+                    {
+                        id: 'static-guia-1',
+                        title: 'Guía Completa: Cómo Transferir un Auto en Linares',
+                        slug: 'guia_transferencia',
+                        excerpt: 'Toda la información legal y administrativa que necesitas para comprar o vender tu vehículo en la ciudad de Linares.',
+                        cover_image: '/blog/images/notaria.png',
+                        created_at: new Date('2026-02-27T15:20:00Z').toISOString()
+                    },
+                    {
                         id: 'static-camionetas-1',
                         title: 'Las 5 Camionetas Más Buscadas en el Maule para el Trabajo Agrícola',
                         slug: 'camionetas_maule',

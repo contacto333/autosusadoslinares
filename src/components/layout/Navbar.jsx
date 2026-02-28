@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Car, PlusCircle, User, LogOut, ShieldCheck, Zap } from 'lucide-react';
+import { Menu, X, Car, PlusCircle, User, LogOut, ShieldCheck, Zap, BookOpen } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
@@ -35,6 +35,14 @@ const Navbar = () => {
                         >
                             <Zap className="mr-1 h-4 w-4 text-purple-600" />
                             CompraAutoExpress
+                        </Link>
+
+                        <Link
+                            to="/blog"
+                            className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
+                        >
+                            <BookOpen className="mr-2 h-4 w-4" />
+                            Blog
                         </Link>
 
                         <Link
@@ -96,6 +104,14 @@ const Navbar = () => {
                         >
                             <Zap className="mr-2 h-5 w-5" />
                             CompraAutoExpress
+                        </Link>
+                        <Link
+                            to="/blog"
+                            className="w-full flex items-center justify-center px-4 py-2 border border-gray-100 text-base font-medium rounded-md text-gray-700 bg-gray-50 hover:bg-gray-100 mb-2 transition-colors"
+                            onClick={() => setIsOpen(false)}
+                        >
+                            <BookOpen className="mr-2 h-5 w-5 text-blue-600" />
+                            Blog
                         </Link>
                         <Link
                             to="/publicar"
