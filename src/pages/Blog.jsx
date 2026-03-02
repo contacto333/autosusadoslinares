@@ -15,6 +15,14 @@ const Blog = () => {
                 // Articulos estáticos
                 const staticPosts = [
                     {
+                        id: 'static-primer-1',
+                        title: 'Los mejores autos para primer auto en Chile: baratos y fáciles de mantener',
+                        slug: 'primer_auto_chile',
+                        excerpt: 'Elegir tu primer vehículo es una decisión clave. Te mostramos los modelos más recomendados por su economía y confiabilidad.',
+                        cover_image: '/blog/images/primer_auto_vibe.jpg',
+                        created_at: new Date('2026-03-01T11:00:00Z').toISOString()
+                    },
+                    {
                         id: 'static-economicos-1',
                         title: 'Los 10 autos usados más económicos y confiables en Chile (2026)',
                         slug: 'autos_economicos_2026',

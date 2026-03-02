@@ -11,7 +11,7 @@ const BlogPost = () => {
 
     useEffect(() => {
         setLoading(true);
-        const staticPosts = ['articulo_dummy', 'camionetas_maule', 'guia_transferencia', 'autos_economicos_2026'];
+        const staticPosts = ['articulo_dummy', 'camionetas_maule', 'guia_transferencia', 'autos_economicos_2026', 'primer_auto_chile'];
 
         if (staticPosts.includes(slug)) {
             // Cargar artículo estático desde carpeta public
@@ -46,6 +46,10 @@ const BlogPost = () => {
                         metadata.created_at = '2026-02-28T20:00:00Z';
                         metadata.excerpt = 'Descubre los modelos que mejor equilibran precio, mantenimiento y ahorro de combustible para este año.';
                         metadata.cover_image = '/blog/images/swift.jpg';
+                    } else if (slug === 'primer_auto_chile') {
+                        metadata.created_at = '2026-03-01T11:00:00Z';
+                        metadata.excerpt = 'Elegir tu primer vehículo es una decisión clave. Te mostramos los modelos más recomendados por su economía y confiabilidad.';
+                        metadata.cover_image = '/blog/images/primer_auto_vibe.jpg';
                     } else {
                         metadata.excerpt = 'Este es un artículo de prueba cargado desde un archivo HTML estático en el servidor.';
                     }
