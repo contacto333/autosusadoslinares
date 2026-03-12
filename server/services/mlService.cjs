@@ -39,7 +39,11 @@ const generateQueries = ({ brand, model, yearFrom, yearTo, text }) => {
  */
 const predictCategory = async (query) => {
     try {
-        const response = await fetch(`https://api.mercadolibre.com/sites/MLC/domain_discovery/search?limit=1&q=${encodeURIComponent(query)}`);
+        const response = await fetch(`https://api.mercadolibre.com/sites/MLC/domain_discovery/search?limit=1&q=${encodeURIComponent(query)}`, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+        });
         if (!response.ok) return null;
         const data = await response.json();
         return data[0]?.category_id || null;
@@ -68,9 +72,12 @@ const searchItems = async (query, categoryId, { yearFrom, yearTo }) => {
             apiUrl += `&VEHICLE_YEAR=${yearFrom}-${yearTo}`;
         }
 
-        const headers = process.env.ML_ACCESS_TOKEN ? {
-            'Authorization': `Bearer ${process.env.ML_ACCESS_TOKEN}`
-        } : {};
+        const headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (AutosLinares)'
+        };
+        if (process.env.ML_ACCESS_TOKEN) {
+            headers['Authorization'] = `Bearer ${process.env.ML_ACCESS_TOKEN}`;
+        }
         
         const response = await fetch(apiUrl, { headers });
         const data = await response.json();

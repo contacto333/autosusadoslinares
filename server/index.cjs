@@ -241,6 +241,9 @@ app.get('/api/search/ml', async (req, res) => {
         res.json(results);
     } catch (err) {
         console.error('ML Search Error:', err);
+        if (err.message && err.message.toLowerCase().includes('forbidden')) {
+            return res.status(403).json({ error: 'Mercado Libre bloqueó la consulta desde este servidor por políticas anti-bot (403 Forbidden). Debes crear y configurar una APP en ML para obtener un token e ingresarlo en las variables de entorno como ML_ACCESS_TOKEN.' });
+        }
         res.status(500).json({ error: 'Error al realizar la búsqueda en Mercado Libre' });
     }
 });

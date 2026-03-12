@@ -12,6 +12,7 @@ const Home = () => {
     const [mlResults, setMlResults] = useState(null);
     const [isSearchingML, setIsSearchingML] = useState(false);
     const [searchPerformed, setSearchPerformed] = useState(false);
+    const [searchError, setSearchError] = useState(null);
 
     useEffect(() => {
         fetch(`${API_URL}/api/listings`)
@@ -29,16 +30,22 @@ const Home = () => {
     const handleSearch = async ({ brand, model, yearFrom, yearTo, text }) => {
         setIsSearchingML(true);
         setSearchPerformed(true);
+        setSearchError(null);
         try {
             const queryParams = new URLSearchParams({ brand, model, yearFrom, yearTo });
             if (text) queryParams.append('text', text);
             
             const res = await fetch(`${API_URL}/api/search/ml?${queryParams.toString()}`);
-            if (!res.ok) throw new Error('Error buscando');
             const data = await res.json();
+            
+            if (!res.ok) {
+                throw new Error(data.error || 'Error buscando autos');
+            }
+            
             setMlResults(data);
         } catch (err) {
             console.error('Error fetching ML search', err);
+            setSearchError(err.message);
             setMlResults([]);
         } finally {
             setIsSearchingML(false);
@@ -81,7 +88,7 @@ const Home = () => {
                     </h2>
                     {searchPerformed && (
                         <button 
-                            onClick={() => { setSearchPerformed(false); setMlResults(null); }}
+                            onClick={() => { setSearchPerformed(false); setMlResults(null); setSearchError(null); }}
                             className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
                         >
                             Ver recientes locales
@@ -152,8 +159,16 @@ const Home = () => {
                 )}
                 {displayListings.length === 0 && !loading && (
                     <div className="text-center py-16 px-4">
-                        <p className="text-gray-500 text-lg mb-2">No se encontraron autos.</p>
-                        {searchPerformed && <p className="text-gray-400">Intenta afinar tu búsqueda de Mercado Libre.</p>}
+                        {searchError ? (
+                            <div className="bg-red-50 text-red-700 p-4 rounded-xl max-w-2xl mx-auto border border-red-100">
+                                <p className="font-medium">{searchError}</p>
+                            </div>
+                        ) : (
+                            <>
+                                <p className="text-gray-500 text-lg mb-2">No se encontraron autos.</p>
+                                {searchPerformed && <p className="text-gray-400">Intenta afinar tu búsqueda de Mercado Libre.</p>}
+                            </>
+                        )}
                     </div>
                 )}
             </div>
