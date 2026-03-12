@@ -280,8 +280,11 @@ app.put('/api/listings/:id', authenticateToken, upload.array('images', 5), async
 
         // Handle new images if any
         if (req.files && req.files.length > 0) {
-            const uploadPromises = req.files.map(async (file) => {
+            console.log(`Processing ${req.files.length} new files for listing ${id}`);
+            const uploadPromises = req.files.map(async (file, index) => {
+                console.log(`Uploading file ${index + 1}: ${file.originalname}, size: ${file.size} bytes`);
                 const url = await uploadToCloudinary(file.path);
+                console.log(`File ${index + 1} uploaded to Cloudinary: ${url}`);
                 await runQuery("INSERT INTO images (listing_id, url) VALUES (?, ?)", [id, url]);
                 if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
                 return url;

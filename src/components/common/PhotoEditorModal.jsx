@@ -81,21 +81,23 @@ const PhotoEditorModal = ({ imageFile, onSave, onCancel }) => {
     }, [isDragging, isResizing, dragStart]);
 
     const handleSave = () => {
-        const canvas = document.createElement('canvas');
         const img = imageRef.current;
-        const rect = img.getBoundingClientRect();
+        if (!img) return;
 
+        const canvas = document.createElement('canvas');
         canvas.width = img.naturalWidth;
         canvas.height = img.naturalHeight;
 
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0);
 
-        // Calculate scale
+        // Precise scale calculation
+        // rect is the element size in the UI
+        const rect = img.getBoundingClientRect();
         const scaleX = img.naturalWidth / rect.width;
         const scaleY = img.naturalHeight / rect.height;
 
-        // Draw the black box
+        // Draw the black box with exact proportions
         ctx.fillStyle = 'black';
         ctx.fillRect(
             box.x * scaleX,
@@ -105,7 +107,11 @@ const PhotoEditorModal = ({ imageFile, onSave, onCancel }) => {
         );
 
         canvas.toBlob((blob) => {
-            const editedFile = new File([blob], imageFile.name, { type: 'image/jpeg' });
+            if (!blob) {
+                alert('Error al generar la imagen editada');
+                return;
+            }
+            const editedFile = new File([blob], imageFile?.name || 'edited-photo.jpg', { type: 'image/jpeg' });
             onSave(editedFile);
         }, 'image/jpeg', 0.9);
     };
@@ -132,7 +138,7 @@ const PhotoEditorModal = ({ imageFile, onSave, onCancel }) => {
                             ref={imageRef}
                             src={imgUrl} 
                             alt="Editar" 
-                            className="max-w-full max-h-[60vh] object-contain select-none"
+                            className="max-w-full max-h-[60vh] block object-contain select-none"
                             onLoad={handleImageLoad}
                             draggable={false}
                         />

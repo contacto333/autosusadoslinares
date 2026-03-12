@@ -180,6 +180,10 @@ const EditListing = () => {
         setError('');
 
         try {
+            console.log('Form submission started');
+            console.log('New images to upload:', newImages.map(f => ({ name: f.name, size: f.size })));
+            console.log('Pending deletes:', pendingDeletes);
+
             const uploadData = new FormData();
             uploadData.append('title', formData.title);
             uploadData.append('brand', formData.brand);
