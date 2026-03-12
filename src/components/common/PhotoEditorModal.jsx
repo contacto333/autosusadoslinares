@@ -92,10 +92,16 @@ const PhotoEditorModal = ({ imageFile, onSave, onCancel }) => {
         ctx.drawImage(img, 0, 0);
 
         // Precise scale calculation
-        // rect is the element size in the UI
         const rect = img.getBoundingClientRect();
         const scaleX = img.naturalWidth / rect.width;
         const scaleY = img.naturalHeight / rect.height;
+
+        console.log('--- Drawing Box on Canvas ---');
+        console.log('Natural Size:', img.naturalWidth, 'x', img.naturalHeight);
+        console.log('UI Render Size:', rect.width, 'x', rect.height);
+        console.log('Scale:', scaleX, 'x', scaleY);
+        console.log('UI Box Pos:', box.x, ',', box.y);
+        console.log('Canvas Draw Pos:', box.x * scaleX, ',', box.y * scaleY);
 
         // Draw the black box with exact proportions
         ctx.fillStyle = 'black';
@@ -108,12 +114,14 @@ const PhotoEditorModal = ({ imageFile, onSave, onCancel }) => {
 
         canvas.toBlob((blob) => {
             if (!blob) {
+                console.error('Blob generation failed');
                 alert('Error al generar la imagen editada');
                 return;
             }
+            console.log('Edited Blob size:', blob.size);
             const editedFile = new File([blob], imageFile?.name || 'edited-photo.jpg', { type: 'image/jpeg' });
             onSave(editedFile);
-        }, 'image/jpeg', 0.9);
+        }, 'image/jpeg', 0.95);
     };
 
     if (!imgUrl) return null;
@@ -138,9 +146,10 @@ const PhotoEditorModal = ({ imageFile, onSave, onCancel }) => {
                             ref={imageRef}
                             src={imgUrl} 
                             alt="Editar" 
-                            className="max-w-full max-h-[60vh] block object-contain select-none"
+                            className="max-w-full max-h-[60vh] block select-none"
                             onLoad={handleImageLoad}
                             draggable={false}
+                            style={{ width: 'auto', height: 'auto' }}
                         />
                         
                         {/* The Draggable Black Box */}

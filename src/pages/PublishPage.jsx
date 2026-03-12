@@ -74,10 +74,14 @@ const PublishPage = () => {
         e.preventDefault();
         setLoading(true);
 
+        console.log('Publishing started');
+        console.log('Images to upload:', formData.images.map(f => ({ name: f.name, size: f.size })));
+
         const data = new FormData();
         Object.keys(formData).forEach(key => {
             if (key === 'images') {
-                formData.images.forEach(image => {
+                formData.images.forEach((image, index) => {
+                    console.log(`Appending image ${index + 1}: ${image.name} (${image.size} bytes)`);
                     data.append('images', image);
                 });
             } else if (key === 'price' || key === 'mileage') {
@@ -98,6 +102,7 @@ const PublishPage = () => {
                 alert('¡Aviso publicado con éxito!');
                 navigate('/');
             } else {
+                console.error('Publish error:', result);
                 alert('Error: ' + (result.error || 'Hubo un problema.'));
             }
         } catch (error) {
@@ -221,7 +226,6 @@ const PublishPage = () => {
                                         src={URL.createObjectURL(image)} 
                                         alt={`Preview ${index}`} 
                                         className="w-full h-full object-cover" 
-                                        onLoad={(e) => URL.revokeObjectURL(e.target.src)} // Clean up URL
                                     />
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                         <button
