@@ -33,6 +33,7 @@ const EditListing = () => {
     const [newImages, setNewImages] = useState([]);
     const [previewUrls, setPreviewUrls] = useState([]);
     const [editingImageIndex, setEditingImageIndex] = useState(null);
+    const [editingExistingImage, setEditingExistingImage] = useState(null); // { id, url, index }
 
     useEffect(() => {
         const userJson = localStorage.getItem('user');
@@ -142,20 +143,61 @@ const EditListing = () => {
         });
     };
 
-    const handleSaveEditedImage = (editedFile) => {
-        const updatedImages = [...newImages];
-        updatedImages[editingImageIndex] = editedFile;
-        setNewImages(updatedImages);
+    const handleEditExistingPhoto = async (img, index) => {
+        setLoading(true);
+        try {
+            const response = await fetch(img.url);
+            const blob = await response.blob();
+            const file = new File([blob], `existing-${img.id}.jpg`, { type: 'image/jpeg' });
+            setEditingExistingImage({ ...img, file, index });
+        } catch (err) {
+            console.error(err);
+            alert('Error al procesar la imagen para editar');
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        // Update preview URL
-        setPreviewUrls(prev => {
-            const updated = [...prev];
-            URL.revokeObjectURL(updated[editingImageIndex]);
-            updated[editingImageIndex] = URL.createObjectURL(editedFile);
-            return updated;
-        });
+    const handleSaveEditedImage = async (editedFile) => {
+        if (editingExistingImage) {
+            // 1. Delete original existing image from DB
+            const imgId = editingExistingImage.id;
+            try {
+                const response = await fetch(`${API_URL}/api/images/${imgId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
 
-        setEditingImageIndex(null);
+                if (response.ok) {
+                    // 2. Remove from existingImages state
+                    setExistingImages(prev => prev.filter(img => img.id !== imgId));
+                    // 3. Add edited file to newImages
+                    setNewImages(prev => [...prev, editedFile]);
+                    setPreviewUrls(prev => [...prev, URL.createObjectURL(editedFile)]);
+                } else {
+                    alert('Error al actualizar la imagen original');
+                }
+            } catch (err) {
+                alert('Error de conexión');
+            }
+            setEditingExistingImage(null);
+        } else {
+            const updatedImages = [...newImages];
+            updatedImages[editingImageIndex] = editedFile;
+            setNewImages(updatedImages);
+
+            // Update preview URL
+            setPreviewUrls(prev => {
+                const updated = [...prev];
+                URL.revokeObjectURL(updated[editingImageIndex]);
+                updated[editingImageIndex] = URL.createObjectURL(editedFile);
+                return updated;
+            });
+
+            setEditingImageIndex(null);
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -317,17 +359,27 @@ const EditListing = () => {
                         <h2 className="text-lg font-medium text-gray-900 border-b pb-2 mb-4">Fotos del Vehículo</h2>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                             {/* Existing Images */}
-                            {existingImages.map((img) => (
+                            {existingImages.map((img, index) => (
                                 <div key={img.id} className="relative aspect-square rounded-lg overflow-hidden group">
                                     <img src={img.url} alt="Vehículo" className="w-full h-full object-cover" />
-                                    <button
-                                        type="button"
-                                        onClick={() => removeExistingImage(img.id)}
-                                        className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-                                        title="Eliminar foto"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </button>
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleEditExistingPhoto(img, index)}
+                                            className="p-1.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
+                                            title="Esconder patente"
+                                        >
+                                            <Edit2 className="h-4 w-4" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeExistingImage(img.id)}
+                                            className="p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
+                                            title="Eliminar"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
 
@@ -379,6 +431,14 @@ const EditListing = () => {
                             imageFile={newImages[editingImageIndex]}
                             onSave={handleSaveEditedImage}
                             onCancel={() => setEditingImageIndex(null)}
+                        />
+                    )}
+
+                    {editingExistingImage !== null && (
+                        <PhotoEditorModal 
+                            imageFile={editingExistingImage.file}
+                            onSave={handleSaveEditedImage}
+                            onCancel={() => setEditingExistingImage(null)}
                         />
                     )}
 
