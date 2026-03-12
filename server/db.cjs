@@ -144,6 +144,14 @@ const initDb = async () => {
             published INTEGER DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`,
+    `CREATE TABLE IF NOT EXISTS ml_tokens (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            access_token TEXT NOT NULL,
+            refresh_token TEXT NOT NULL,
+            user_id TEXT,
+            expires_at INTEGER NOT NULL,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`
   ];
 

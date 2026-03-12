@@ -228,6 +228,78 @@ app.get('/api/listings', async (req, res) => {
     }
 });
 
+// Mercado Libre OAuth: Begin Auth Flow
+app.get('/api/ml/auth', adminOnly, (req, res) => {
+    const clientId = process.env.ML_CLIENT_ID;
+    const redirectUri = process.env.ML_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/ml/callback`;
+    
+    if (!clientId) {
+        return res.status(500).json({ error: 'Falta ML_CLIENT_ID en el servidor' });
+    }
+
+    const authUrl = `https://auth.mercadolibre.cl/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    res.json({ url: authUrl });
+});
+
+// Mercado Libre OAuth: Callback to exchange code for token
+app.get('/api/ml/callback', async (req, res) => {
+    const { code } = req.query;
+    if (!code) return res.status(400).send('Código de autorización no encontrado');
+
+    const clientId = process.env.ML_CLIENT_ID;
+    const clientSecret = process.env.ML_CLIENT_SECRET;
+    const redirectUri = process.env.ML_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/ml/callback`;
+
+    try {
+        const response = await fetch('https://api.mercadolibre.com/oauth/token', {
+            method: 'POST',
+            headers: {
+                'accept': 'application/json',
+                'content-type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({
+                grant_type: 'authorization_code',
+                client_id: clientId,
+                client_secret: clientSecret,
+                code: code,
+                redirect_uri: redirectUri
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // Guardar en Base de Datos (id = 1 porque solo necesitamos un token global para el bot)
+            const expiresAt = Date.now() + (data.expires_in * 1000);
+            await runQuery(
+                `INSERT INTO ml_tokens (id, access_token, refresh_token, user_id, expires_at, updated_at) 
+                 VALUES (1, ?, ?, ?, ?, datetime('now')) 
+                 ON CONFLICT(id) DO UPDATE SET 
+                    access_token=excluded.access_token, 
+                    refresh_token=excluded.refresh_token, 
+                    user_id=excluded.user_id, 
+                    expires_at=excluded.expires_at, 
+                    updated_at=datetime('now')`,
+                [data.access_token, data.refresh_token, data.user_id, expiresAt]
+            );
+
+            res.send(`
+                <html><body>
+                <h2>Autenticación con Mercado Libre exitosa</h2>
+                <p>El token ha sido guardado. Ya puedes cerrar esta ventana y regresar al panel de control.</p>
+                <script>setTimeout(() => window.close(), 5000);</script>
+                </body></html>
+            `);
+        } else {
+            console.error('Error fetching ML OAuth token:', data);
+            res.status(400).send(`Error de autenticación: ${data.message || 'Desconocido'}`);
+        }
+    } catch (err) {
+        console.error('ML Callback Error:', err);
+        res.status(500).send('Error interno del servidor durante la autenticación');
+    }
+});
+
 // Mercado Libre Detailed Search
 app.get('/api/search/ml', async (req, res) => {
     try {

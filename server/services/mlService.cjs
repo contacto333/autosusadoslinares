@@ -1,51 +1,86 @@
 const url = require('url');
 
-let cachedToken = null;
-let tokenExpiresAt = 0;
+const db = require('../db.cjs');
 
 /**
- * Gets or refreshes a Mercado Libre access token using client credentials
+ * Helper to query DB using promises
+ */
+const getQuery = (query, params) => {
+    return new Promise((resolve, reject) => {
+        db.get(query, params, (err, row) => {
+            if (err) reject(err);
+            else resolve(row);
+        });
+    });
+};
+
+const runQuery = (query, params) => {
+    return new Promise((resolve, reject) => {
+        db.run(query, params, function (err) {
+            if (err) reject(err);
+            else resolve(this);
+        });
+    });
+};
+
+/**
+ * Gets a valid Mercado Libre access token from DB, refreshing it if necessary
  * @returns {Promise<string|null>} 
  */
 const getAccessToken = async () => {
-    // If user provided a raw access token directly
+    // If user provided a raw access token directly (override for dev)
     if (process.env.ML_ACCESS_TOKEN) return process.env.ML_ACCESS_TOKEN;
     
-    const clientId = process.env.ML_CLIENT_ID;
-    const clientSecret = process.env.ML_CLIENT_SECRET;
-    
-    if (!clientId || !clientSecret) return null;
-    
-    if (cachedToken && Date.now() < tokenExpiresAt) {
-        return cachedToken;
-    }
-    
     try {
-        const response = await fetch('https://api.mercadolibre.com/oauth/token', {
-            method: 'POST',
-            headers: {
-                'accept': 'application/json',
-                'content-type': 'application/x-www-form-urlencoded'
-            },
-            body: new URLSearchParams({
-                grant_type: 'client_credentials',
-                client_id: clientId,
-                client_secret: clientSecret
-            })
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            cachedToken = data.access_token;
-            // Buffer of 300 seconds (5 minutes) before expiration
-            tokenExpiresAt = Date.now() + (data.expires_in - 300) * 1000; 
-            return cachedToken;
-        } else {
-            console.error('Failed to fetch ML token:', await response.text());
+        const tokenRow = await getQuery("SELECT * FROM ml_tokens WHERE id = 1");
+        if (!tokenRow) {
+            console.warn('[ML Service] No token found in DB. Need to authorize app first.');
             return null;
         }
+
+        // Si expiró o expira en menos de 5 minutos, refrescar
+        if (Date.now() >= (tokenRow.expires_at - 300000)) {
+            console.log('[ML Service] Token refreshing...');
+            const clientId = process.env.ML_CLIENT_ID;
+            const clientSecret = process.env.ML_CLIENT_SECRET;
+            
+            if (!clientId || !clientSecret) {
+                console.error('[ML Service] Missing ML credentials to refresh token.');
+                return null;
+            }
+
+            const response = await fetch('https://api.mercadolibre.com/oauth/token', {
+                method: 'POST',
+                headers: {
+                    'accept': 'application/json',
+                    'content-type': 'application/x-www-form-urlencoded'
+                },
+                body: new URLSearchParams({
+                    grant_type: 'refresh_token',
+                    client_id: clientId,
+                    client_secret: clientSecret,
+                    refresh_token: tokenRow.refresh_token
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                const expiresAt = Date.now() + (data.expires_in * 1000);
+                await runQuery(
+                    `UPDATE ml_tokens SET access_token = ?, refresh_token = ?, expires_at = ?, updated_at = datetime('now') WHERE id = 1`,
+                    [data.access_token, data.refresh_token, expiresAt]
+                );
+                return data.access_token;
+            } else {
+                console.error('[ML Service] Failed to refresh token:', data);
+                return null;
+            }
+        }
+
+        return tokenRow.access_token;
     } catch (err) {
-        console.error('ML Token Error:', err.message);
+        console.error('[ML Service] Error fetching token:', err.message);
         return null;
     }
 };
