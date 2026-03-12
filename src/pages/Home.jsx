@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Search } from 'lucide-react';
+import { Search, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { API_URL } from '../api';
+import DetailedSearch from '../components/search/DetailedSearch';
 
 const Home = () => {
     const [listings, setListings] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
+    
+    // ML Search States
+    const [mlResults, setMlResults] = useState(null);
+    const [isSearchingML, setIsSearchingML] = useState(false);
+    const [searchPerformed, setSearchPerformed] = useState(false);
 
     useEffect(() => {
         fetch(`${API_URL}/api/listings`)
@@ -21,10 +26,26 @@ const Home = () => {
             });
     }, []);
 
-    const filteredListings = listings.filter(l =>
-        l.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        l.brand.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const handleSearch = async ({ brand, model, year, text }) => {
+        setIsSearchingML(true);
+        setSearchPerformed(true);
+        try {
+            const queryParams = new URLSearchParams({ brand, model, year });
+            if (text) queryParams.append('text', text);
+            
+            const res = await fetch(`${API_URL}/api/search/ml?${queryParams.toString()}`);
+            if (!res.ok) throw new Error('Error buscando');
+            const data = await res.json();
+            setMlResults(data);
+        } catch (err) {
+            console.error('Error fetching ML search', err);
+            setMlResults([]);
+        } finally {
+            setIsSearchingML(false);
+        }
+    };
+
+    const displayListings = searchPerformed ? (mlResults || []) : listings;
 
     return (
         <div>
@@ -48,40 +69,48 @@ const Home = () => {
                         Publica gratis y conecta con compradores locales al instante.
                     </p>
 
-                    <div className="mt-10 max-w-xl">
-                        <div className="relative rounded-full shadow-sm bg-white p-2 flex">
-                            <div className="flex-grow flex items-center pl-4">
-                                <Search className="h-5 w-5 text-gray-400 mr-3" />
-                                <input
-                                    type="text"
-                                    className="block w-full border-0 focus:ring-0 text-gray-900 placeholder-gray-500 sm:text-sm outline-none"
-                                    placeholder="Buscar por marca, modelo o año..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                            </div>
-                            <button className="flex-shrink-0 bg-blue-600 text-white px-6 py-3 rounded-full font-medium hover:bg-blue-700 transition-colors shadow-sm">
-                                Buscar
-                            </button>
-                        </div>
-                    </div>
+                    <DetailedSearch onSearch={handleSearch} isLoading={isSearchingML} />
                 </div>
             </div>
 
-            {/* Recent Listings */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Publicaciones Recientes</h2>
+            {/* Listings Section */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" id="search">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900">
+                        {searchPerformed ? 'Resultados de Búsqueda (Mercado Libre)' : 'Publicaciones Recientes'}
+                    </h2>
+                    {searchPerformed && (
+                        <button 
+                            onClick={() => { setSearchPerformed(false); setMlResults(null); }}
+                            className="text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
+                        >
+                            Ver recientes locales
+                        </button>
+                    )}
+                </div>
 
                 {loading ? (
                     <p>Cargando anuncios...</p>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {filteredListings.map((item) => (
-                            <Link to={`/auto/${item.id}`} key={item.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-100 group block">
+                        {displayListings.map((item) => {
+                            const isML = item.origin === 'MLC';
+                            const CardWrapper = isML ? 'a' : Link;
+                            const cardProps = isML 
+                                ? { href: item.url, target: '_blank', rel: 'noopener noreferrer' }
+                                : { to: `/auto/${item.id}` };
+
+                            return (
+                                <CardWrapper {...cardProps} key={item.id} className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-100 group block relative flex flex-col h-full">
+                                    {isML && (
+                                        <div className="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2 py-1 rounded-full z-20 shadow-sm flex items-center gap-1">
+                                            MercadoLibre <ExternalLink className="h-3 w-3" />
+                                        </div>
+                                    )}
                                 <div className="aspect-w-16 aspect-h-9 bg-gray-200 relative overflow-hidden h-48">
                                     {item.main_image ? (
                                         <img
-                                            src={`${API_URL}${item.main_image}`}
+                                            src={isML ? item.main_image : `${API_URL}${item.main_image}`}
                                             alt={item.title}
                                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                         />
@@ -98,28 +127,34 @@ const Home = () => {
                                         </div>
                                     )}
                                 </div>
-                                <div className="p-4">
+                                <div className="p-4 flex flex-col flex-grow">
                                     <div className="flex justify-between items-start mb-2">
-                                        <h3 className="text-lg font-semibold text-gray-900 line-clamp-1">{item.title}</h3>
+                                        <h3 className="text-lg font-semibold text-gray-900 line-clamp-2" title={item.title}>{item.title}</h3>
                                     </div>
                                     <p className="text-2xl font-bold text-blue-600 mb-2">${new Intl.NumberFormat('es-CL').format(item.price)}</p>
-                                    <div className="flex items-center text-sm text-gray-500 mb-4">
+                                    <div className="flex items-center text-sm text-gray-500 mb-4 flex-wrap">
                                         <span>{new Intl.NumberFormat('es-CL').format(item.mileage || 0)} km</span>
                                         <span className="mx-2">•</span>
-                                        <span>{item.year}</span>
+                                        <span>{item.year || 'N/A'}</span>
                                         <span className="mx-2">•</span>
-                                        <span>{item.brand}</span>
+                                        <span className="truncate max-w-[100px]">{item.brand || 'N/A'}</span>
                                     </div>
-                                    <span className="block w-full text-center py-2 px-4 bg-gray-50 text-blue-600 font-medium rounded-lg hover:bg-blue-50 transition-colors text-sm">
-                                        Ver Detalles
-                                    </span>
+                                    <div className="mt-auto">
+                                        <span className="block w-full text-center py-2 px-4 bg-gray-50 text-blue-600 font-medium rounded-lg group-hover:bg-blue-50 transition-colors text-sm">
+                                            {isML ? 'Ver en Mercado Libre' : 'Ver Detalles'}
+                                        </span>
+                                    </div>
                                 </div>
-                            </Link>
-                        ))}
+                            </CardWrapper>
+                        );
+                    })}
                     </div>
                 )}
-                {filteredListings.length === 0 && !loading && (
-                    <p className="text-gray-500 text-center py-10">No se encontraron autos.</p>
+                {displayListings.length === 0 && !loading && (
+                    <div className="text-center py-16 px-4">
+                        <p className="text-gray-500 text-lg mb-2">No se encontraron autos.</p>
+                        {searchPerformed && <p className="text-gray-400">Intenta afinar tu búsqueda de Mercado Libre.</p>}
+                    </div>
                 )}
             </div>
         </div>

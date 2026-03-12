@@ -7,6 +7,7 @@ const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cloudinary = require('cloudinary').v2;
+const mlService = require('./services/mlService.cjs');
 
 const SECRET_KEY = process.env.JWT_SECRET || 'SECRET_KEY';
 
@@ -224,6 +225,23 @@ app.get('/api/listings', async (req, res) => {
         res.json(listings);
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// Mercado Libre Detailed Search
+app.get('/api/search/ml', async (req, res) => {
+    try {
+        const { brand, model, year, text } = req.query;
+        
+        if (!brand || !model) {
+            return res.status(400).json({ error: 'Marca y modelo son requeridos' });
+        }
+
+        const results = await mlService.executeSearch({ brand, model, year, text });
+        res.json(results);
+    } catch (err) {
+        console.error('ML Search Error:', err);
+        res.status(500).json({ error: 'Error al realizar la búsqueda en Mercado Libre' });
     }
 });
 
