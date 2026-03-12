@@ -42,7 +42,7 @@ const Footer = () => {
                 </div>
                 <div className="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center">
                     <p className="text-gray-400 text-sm">
-                        © {new Date().getFullYear()} AutosLinares. Todos los derechos reservados. <span className="text-xs opacity-50 ml-2">v1.2.8-debug</span>
+                        © {new Date().getFullYear()} AutosLinares. Todos los derechos reservados. <span className="text-xs opacity-50 ml-2">v1.3.0</span>
                     </p>
                 </div>
             </div>

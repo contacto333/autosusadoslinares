@@ -1,5 +1,55 @@
 const url = require('url');
 
+let cachedToken = null;
+let tokenExpiresAt = 0;
+
+/**
+ * Gets or refreshes a Mercado Libre access token using client credentials
+ * @returns {Promise<string|null>} 
+ */
+const getAccessToken = async () => {
+    // If user provided a raw access token directly
+    if (process.env.ML_ACCESS_TOKEN) return process.env.ML_ACCESS_TOKEN;
+    
+    const clientId = process.env.ML_CLIENT_ID;
+    const clientSecret = process.env.ML_CLIENT_SECRET;
+    
+    if (!clientId || !clientSecret) return null;
+    
+    if (cachedToken && Date.now() < tokenExpiresAt) {
+        return cachedToken;
+    }
+    
+    try {
+        const response = await fetch('https://api.mercadolibre.com/oauth/token', {
+            method: 'POST',
+            headers: {
+                'accept': 'application/json',
+                'content-type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({
+                grant_type: 'client_credentials',
+                client_id: clientId,
+                client_secret: clientSecret
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            cachedToken = data.access_token;
+            // Buffer of 300 seconds (5 minutes) before expiration
+            tokenExpiresAt = Date.now() + (data.expires_in - 300) * 1000; 
+            return cachedToken;
+        } else {
+            console.error('Failed to fetch ML token:', await response.text());
+            return null;
+        }
+    } catch (err) {
+        console.error('ML Token Error:', err.message);
+        return null;
+    }
+};
+
 /**
  * Generates various search queries based on user input.
  * @param {Object} params 
@@ -39,11 +89,15 @@ const generateQueries = ({ brand, model, yearFrom, yearTo, text }) => {
  */
 const predictCategory = async (query) => {
     try {
-        const response = await fetch(`https://api.mercadolibre.com/sites/MLC/domain_discovery/search?limit=1&q=${encodeURIComponent(query)}`, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
-        });
+        const headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (AutosLinares)'
+        };
+        const token = await getAccessToken();
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`https://api.mercadolibre.com/sites/MLC/domain_discovery/search?limit=1&q=${encodeURIComponent(query)}`, { headers });
         if (!response.ok) return null;
         const data = await response.json();
         return data[0]?.category_id || null;
@@ -75,8 +129,9 @@ const searchItems = async (query, categoryId, { yearFrom, yearTo }) => {
         const headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (AutosLinares)'
         };
-        if (process.env.ML_ACCESS_TOKEN) {
-            headers['Authorization'] = `Bearer ${process.env.ML_ACCESS_TOKEN}`;
+        const token = await getAccessToken();
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
         }
         
         const response = await fetch(apiUrl, { headers });
