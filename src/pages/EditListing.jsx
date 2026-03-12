@@ -34,6 +34,7 @@ const EditListing = () => {
     const [previewUrls, setPreviewUrls] = useState([]);
     const [editingImageIndex, setEditingImageIndex] = useState(null);
     const [editingExistingImage, setEditingExistingImage] = useState(null); // { id, url, index }
+    const [pendingDeletes, setPendingDeletes] = useState([]); 
 
     useEffect(() => {
         const userJson = localStorage.getItem('user');
@@ -111,26 +112,12 @@ const EditListing = () => {
         setPreviewUrls(prev => [...prev, ...newPreviews]);
     };
 
-    const removeExistingImage = async (imgId) => {
+    const removeExistingImage = (imgId) => {
         if (!window.confirm('¿Estás seguro de que quieres eliminar esta foto?')) return;
-
-        try {
-            const response = await fetch(`${API_URL}/api/images/${imgId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-
-            if (response.ok) {
-                setExistingImages(prev => prev.filter(img => img.id !== imgId));
-            } else {
-                const data = await response.json();
-                alert(data.error || 'Error al eliminar la imagen');
-            }
-        } catch (err) {
-            alert('Error de conexión');
-        }
+        
+        // Instead of immediate delete, we queue it
+        setPendingDeletes(prev => [...prev, imgId]);
+        setExistingImages(prev => prev.filter(img => img.id !== imgId));
     };
 
     const removeNewImage = (index) => {
@@ -160,28 +147,15 @@ const EditListing = () => {
 
     const handleSaveEditedImage = async (editedFile) => {
         if (editingExistingImage) {
-            // 1. Delete original existing image from DB
             const imgId = editingExistingImage.id;
-            try {
-                const response = await fetch(`${API_URL}/api/images/${imgId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-
-                if (response.ok) {
-                    // 2. Remove from existingImages state
-                    setExistingImages(prev => prev.filter(img => img.id !== imgId));
-                    // 3. Add edited file to newImages
-                    setNewImages(prev => [...prev, editedFile]);
-                    setPreviewUrls(prev => [...prev, URL.createObjectURL(editedFile)]);
-                } else {
-                    alert('Error al actualizar la imagen original');
-                }
-            } catch (err) {
-                alert('Error de conexión');
-            }
+            // Add to pending deletes
+            setPendingDeletes(prev => [...prev, imgId]);
+            // Remove from existing
+            setExistingImages(prev => prev.filter(img => img.id !== imgId));
+            // Add as new
+            setNewImages(prev => [...prev, editedFile]);
+            setPreviewUrls(prev => [...prev, URL.createObjectURL(editedFile)]);
+            
             setEditingExistingImage(null);
         } else {
             const updatedImages = [...newImages];
@@ -232,6 +206,23 @@ const EditListing = () => {
             const data = await response.json();
 
             if (response.ok) {
+                // After successful PUT, execute pending deletes
+                if (pendingDeletes.length > 0) {
+                    try {
+                        await Promise.all(pendingDeletes.map(imgId => 
+                            fetch(`${API_URL}/api/images/${imgId}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                                }
+                            })
+                        ));
+                    } catch (delErr) {
+                        console.error('Error post-save deletions:', delErr);
+                        // We still consider the save successful, but maybe notify?
+                    }
+                }
+
                 alert('¡Publicación actualizada con éxito!');
                 navigate(`/auto/${id}`);
             } else {

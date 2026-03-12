@@ -280,22 +280,26 @@ app.put('/api/listings/:id', authenticateToken, upload.array('images', 5), async
 
         // Handle new images if any
         if (req.files && req.files.length > 0) {
-            for (const file of req.files) {
-                try {
-                    const url = await uploadToCloudinary(file.path);
-                    await runQuery("INSERT INTO images (listing_id, url) VALUES (?, ?)", [id, url]);
-                    // Clean up temp file
-                    if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
-                } catch (cloudErr) {
-                    console.error('Cloudinary upload error:', cloudErr);
-                }
-            }
+            const uploadPromises = req.files.map(async (file) => {
+                const url = await uploadToCloudinary(file.path);
+                await runQuery("INSERT INTO images (listing_id, url) VALUES (?, ?)", [id, url]);
+                if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+                return url;
+            });
+
+            await Promise.all(uploadPromises);
         }
 
         res.json({ success: true });
     } catch (err) {
         console.error('Update listing error:', err);
-        res.status(500).json({ error: err.message });
+        // Clean up any remaining temp files on error
+        if (req.files) {
+            req.files.forEach(file => {
+                if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+            });
+        }
+        res.status(500).json({ error: 'Error al actualizar la publicación o subir las imágenes' });
     }
 });
 
