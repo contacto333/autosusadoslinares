@@ -260,7 +260,7 @@ app.patch('/api/listings/:id/status', async (req, res) => {
 });
 
 // Edit Listing
-app.put('/api/listings/:id', authenticateToken, async (req, res) => {
+app.put('/api/listings/:id', authenticateToken, upload.array('images', 5), async (req, res) => {
     const { title, brand, model, year, price, mileage, description, contactName, contactPhone } = req.body;
     const { id } = req.params;
 
@@ -275,8 +275,46 @@ app.put('/api/listings/:id', authenticateToken, async (req, res) => {
 
         await runQuery(
             `UPDATE listings SET title=?, brand=?, model=?, year=?, price=?, mileage=?, description=?, contact_name=?, contact_phone=? WHERE id=?`,
-            [title, brand, model, year, price, mileage, description, contactName, contactPhone, id]
+            [title, brand, model, year, Number(price), Number(mileage), description, contactName, contactPhone, id]
         );
+
+        // Handle new images if any
+        if (req.files && req.files.length > 0) {
+            for (const file of req.files) {
+                try {
+                    const url = await uploadToCloudinary(file.path);
+                    await runQuery("INSERT INTO images (listing_id, url) VALUES (?, ?)", [id, url]);
+                    // Clean up temp file
+                    if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+                } catch (cloudErr) {
+                    console.error('Cloudinary upload error:', cloudErr);
+                }
+            }
+        }
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Update listing error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Delete specific image
+app.delete('/api/images/:id', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    try {
+        // Find which listing this image belongs to to check ownership
+        const image = await getQuery("SELECT listing_id FROM images WHERE id = ?", [id]);
+        if (!image) return res.status(404).json({ error: 'Image not found' });
+
+        const listing = await getQuery("SELECT user_id FROM listings WHERE id = ?", [image.listing_id]);
+        if (!listing) return res.status(404).json({ error: 'Listing not found' });
+
+        if (listing.user_id !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+
+        await runQuery("DELETE FROM images WHERE id = ?", [id]);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });

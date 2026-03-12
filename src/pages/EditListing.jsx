@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Car, MapPin, DollarSign, Calendar, FileText, User, Phone, Mail, Save, ArrowLeft } from 'lucide-react';
-import { API_URL } from '../api';
 import { useNavigate, useParams, Link } from 'react-router-dom';
+import { Camera, Car, MapPin, DollarSign, Calendar, FileText, User, Phone, Mail, Save, ArrowLeft, X, Plus, Trash2, Edit2 } from 'lucide-react';
+import { API_URL } from '../api';
 import MakeAutocomplete from '../components/common/MakeAutocomplete';
 import ModelAutocomplete from '../components/common/ModelAutocomplete';
+import PhotoEditorModal from '../components/common/PhotoEditorModal';
 
 const EditListing = () => {
     const { id } = useParams();
@@ -28,8 +29,16 @@ const EditListing = () => {
         contactPhone: '',
     });
 
+    const [existingImages, setExistingImages] = useState([]);
+    const [newImages, setNewImages] = useState([]);
+    const [previewUrls, setPreviewUrls] = useState([]);
+    const [editingImageIndex, setEditingImageIndex] = useState(null);
+
     useEffect(() => {
-        if (!user) {
+        const userJson = localStorage.getItem('user');
+        const currentUser = userJson ? JSON.parse(userJson) : null;
+
+        if (!currentUser) {
             navigate('/login');
             return;
         }
@@ -42,22 +51,25 @@ const EditListing = () => {
                     setError(data.error);
                 } else {
                     // Check ownership (simple client-side check, backend should also verify)
-                    if (data.user_id !== user.id && user.role !== 'admin') {
+                    if (data.user_id !== currentUser.id && currentUser.role !== 'admin') {
                         alert('No tienes permiso para editar esta publicación');
                         navigate('/');
                         return;
                     }
 
                     setFormData({
-                        title: data.title,
-                        brand: data.brand,
-                        model: data.model,
-                        price: new Intl.NumberFormat('es-CL').format(data.price),
-                        mileage: new Intl.NumberFormat('es-CL').format(data.mileage),
-                        description: data.description,
-                        contactName: data.contact_name,
-                        contactPhone: data.contact_phone
+                        title: data.title || '',
+                        brand: data.brand || '',
+                        model: data.model || '',
+                        year: data.year || '',
+                        price: data.price ? new Intl.NumberFormat('es-CL').format(data.price) : '',
+                        mileage: data.mileage ? new Intl.NumberFormat('es-CL').format(data.mileage) : '',
+                        description: data.description || '',
+                        contactName: data.contact_name || '',
+                        contactPhone: data.contact_phone || ''
                     });
+
+                    setExistingImages(data.images || []);
                 }
                 setLoading(false);
             })
@@ -66,7 +78,7 @@ const EditListing = () => {
                 setError('Error al cargar la publicación');
                 setLoading(false);
             });
-    }, [id, user, navigate]);
+    }, [id, navigate]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -84,23 +96,95 @@ const EditListing = () => {
         }
     };
 
+    const handleImageChange = (e) => {
+        const files = Array.from(e.target.files);
+        if (existingImages.length + newImages.length + files.length > 5) {
+            alert('Máximo 5 fotos por publicación');
+            return;
+        }
+
+        setNewImages(prev => [...prev, ...files]);
+
+        // Create preview URLs
+        const newPreviews = files.map(file => URL.createObjectURL(file));
+        setPreviewUrls(prev => [...prev, ...newPreviews]);
+    };
+
+    const removeExistingImage = async (imgId) => {
+        if (!window.confirm('¿Estás seguro de que quieres eliminar esta foto?')) return;
+
+        try {
+            const response = await fetch(`${API_URL}/api/images/${imgId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            if (response.ok) {
+                setExistingImages(prev => prev.filter(img => img.id !== imgId));
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Error al eliminar la imagen');
+            }
+        } catch (err) {
+            alert('Error de conexión');
+        }
+    };
+
+    const removeNewImage = (index) => {
+        setNewImages(prev => prev.filter((_, i) => i !== index));
+        setPreviewUrls(prev => {
+            const updated = prev.filter((_, i) => i !== index);
+            // Revoke the URL to avoid memory leaks
+            URL.revokeObjectURL(prev[index]);
+            return updated;
+        });
+    };
+
+    const handleSaveEditedImage = (editedFile) => {
+        const updatedImages = [...newImages];
+        updatedImages[editingImageIndex] = editedFile;
+        setNewImages(updatedImages);
+
+        // Update preview URL
+        setPreviewUrls(prev => {
+            const updated = [...prev];
+            URL.revokeObjectURL(updated[editingImageIndex]);
+            updated[editingImageIndex] = URL.createObjectURL(editedFile);
+            return updated;
+        });
+
+        setEditingImageIndex(null);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
         setError('');
 
         try {
+            const uploadData = new FormData();
+            uploadData.append('title', formData.title);
+            uploadData.append('brand', formData.brand);
+            uploadData.append('model', formData.model);
+            uploadData.append('year', formData.year);
+            uploadData.append('price', formData.price.toString().replace(/\./g, ''));
+            uploadData.append('mileage', formData.mileage.toString().replace(/\./g, ''));
+            uploadData.append('description', formData.description);
+            uploadData.append('contactName', formData.contactName);
+            uploadData.append('contactPhone', formData.contactPhone);
+
+            newImages.forEach(file => {
+                uploadData.append('images', file);
+            });
+
             const response = await fetch(`${API_URL}/api/listings/${id}`, {
                 method: 'PUT',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}` // Although backend MVP might not fully check this yet
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
-                body: JSON.stringify({
-                    ...formData,
-                    price: formData.price.replace(/\./g, ''),
-                    mileage: formData.mileage.replace(/\./g, '')
-                })
+                body: uploadData
             });
 
             const data = await response.json();
@@ -112,6 +196,7 @@ const EditListing = () => {
                 setError(data.error || 'Error al actualizar');
             }
         } catch (err) {
+            console.error(err);
             setError('Error de conexión');
         } finally {
             setSubmitting(false);
@@ -227,44 +312,77 @@ const EditListing = () => {
                         </div>
                     </div>
 
-                    {/* Contact Info */}
+                    {/* Photos */}
                     <div>
-                        <h2 className="text-lg font-medium text-gray-900 border-b pb-2 mb-4">Información de Contacto</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de Contacto</label>
-                                <div className="relative rounded-md shadow-sm">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <User className="h-5 w-5 text-gray-400" />
-                                    </div>
-                                    <input
-                                        type="text"
-                                        name="contactName"
-                                        required
-                                        className="block w-full pl-10 border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2.5 border"
-                                        value={formData.contactName}
-                                        onChange={handleChange}
-                                    />
+                        <h2 className="text-lg font-medium text-gray-900 border-b pb-2 mb-4">Fotos del Vehículo</h2>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                            {/* Existing Images */}
+                            {existingImages.map((img) => (
+                                <div key={img.id} className="relative aspect-square rounded-lg overflow-hidden group">
+                                    <img src={img.url} alt="Vehículo" className="w-full h-full object-cover" />
+                                    <button
+                                        type="button"
+                                        onClick={() => removeExistingImage(img.id)}
+                                        className="absolute top-1 right-1 bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                                        title="Eliminar foto"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
                                 </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono / WhatsApp</label>
-                                <div className="relative rounded-md shadow-sm">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <Phone className="h-5 w-5 text-gray-400" />
+                            ))}
+
+                            {/* New Previews */}
+                            {previewUrls.map((url, index) => (
+                                <div key={`new-${index}`} className="relative aspect-square rounded-lg overflow-hidden group border-2 border-blue-500">
+                                    <img src={url} alt="Nuevo preview" className="w-full h-full object-cover" />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setEditingImageIndex(index)}
+                                            className="p-1.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
+                                            title="Esconder patente"
+                                        >
+                                            <Edit2 className="h-4 w-4" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeNewImage(index)}
+                                            className="p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
+                                            title="Eliminar"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </button>
                                     </div>
-                                    <input
-                                        type="tel"
-                                        name="contactPhone"
-                                        required
-                                        className="block w-full pl-10 border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2.5 border"
-                                        value={formData.contactPhone}
-                                        onChange={handleChange}
-                                    />
                                 </div>
-                            </div>
+                            ))}
+
+                            {/* Upload Button */}
+                            {(existingImages.length + newImages.length < 5) && (
+                                <label className="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all">
+                                    <Plus className="h-8 w-8 text-gray-400" />
+                                    <span className="text-xs text-gray-500 mt-1">Agregar</span>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        className="hidden"
+                                        onChange={handleImageChange}
+                                    />
+                                </label>
+                            )}
                         </div>
+                        <p className="text-xs text-gray-500 mt-2 italic">Puedes tener hasta 5 fotos en total. Usa el icono de edición (<Edit2 className="inline h-3 w-3" />) en las fotos nuevas para ocultar la patente.</p>
                     </div>
+
+                    {editingImageIndex !== null && (
+                        <PhotoEditorModal 
+                            imageFile={newImages[editingImageIndex]}
+                            onSave={handleSaveEditedImage}
+                            onCancel={() => setEditingImageIndex(null)}
+                        />
+                    )}
+
+                    {/* Contact Info */}
 
                     <div className="pt-4 flex justify-end">
                         <button

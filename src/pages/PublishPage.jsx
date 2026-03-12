@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Upload, DollarSign, PenTool, Phone, User, Calendar, Gauge } from 'lucide-react';
-
 import { API_URL } from '../api';
 import { useNavigate } from 'react-router-dom';
+import { Upload, DollarSign, PenTool, Phone, User, Calendar, Gauge, X, Edit2 } from 'lucide-react';
 import MakeAutocomplete from '../components/common/MakeAutocomplete';
 import ModelAutocomplete from '../components/common/ModelAutocomplete';
+import PhotoEditorModal from '../components/common/PhotoEditorModal';
 
 const PublishPage = () => {
     const navigate = useNavigate();
@@ -24,6 +24,8 @@ const PublishPage = () => {
         images: []
     });
 
+    const [editingImageIndex, setEditingImageIndex] = useState(null);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
 
@@ -42,11 +44,30 @@ const PublishPage = () => {
 
     const handleImageChange = (e) => {
         if (e.target.files) {
+            const newFiles = Array.from(e.target.files);
+            if (formData.images.length + newFiles.length > 5) {
+                alert('Máximo 5 fotos');
+                return;
+            }
             setFormData(prev => ({
                 ...prev,
-                images: [...prev.images, ...Array.from(e.target.files)]
+                images: [...prev.images, ...newFiles]
             }));
         }
+    };
+
+    const removeImage = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            images: prev.images.filter((_, i) => i !== index)
+        }));
+    };
+
+    const handleSaveEditedImage = (editedFile) => {
+        const updatedImages = [...formData.images];
+        updatedImages[editingImageIndex] = editedFile;
+        setFormData(prev => ({ ...prev, images: updatedImages }));
+        setEditingImageIndex(null);
     };
 
     const handleSubmit = async (e) => {
@@ -193,23 +214,64 @@ const PublishPage = () => {
                         <p className="mt-1 text-sm text-gray-500">
                             Sube fotos claras de tu auto. (Máximo 5 fotos).
                         </p>
-                        <div className="mt-6">
-                            <div className="max-w-lg flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:bg-gray-50 transition-colors cursor-pointer">
-                                <div className="space-y-1 text-center">
-                                    <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                                    <div className="flex text-sm text-gray-600">
-                                        <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                            <span>Sube un archivo</span>
-                                            <input id="file-upload" name="file-upload" type="file" className="sr-only" multiple accept="image/*" onChange={handleImageChange} />
-                                        </label>
-                                        <p className="pl-1">o arrastra y suelta</p>
+                        <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                            {formData.images.map((image, index) => (
+                                <div key={index} className="relative aspect-square rounded-lg overflow-hidden group border border-gray-200">
+                                    <img 
+                                        src={URL.createObjectURL(image)} 
+                                        alt={`Preview ${index}`} 
+                                        className="w-full h-full object-cover" 
+                                        onLoad={(e) => URL.revokeObjectURL(e.target.src)} // Clean up URL
+                                    />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setEditingImageIndex(index)}
+                                            className="p-1.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
+                                            title="Esconder patente"
+                                        >
+                                            <Edit2 className="h-4 w-4" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeImage(index)}
+                                            className="p-1.5 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors"
+                                            title="Eliminar"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </button>
                                     </div>
-                                    <p className="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
-                                    <p className="text-xs text-blue-500 mt-2">{formData.images.length} fotos seleccionadas</p>
                                 </div>
-                            </div>
+                            ))}
+
+                            {formData.images.length < 5 && (
+                                <label className="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all">
+                                    <Upload className="h-8 w-8 text-gray-400" />
+                                    <span className="text-xs text-gray-500 mt-1">Sube un archivo</span>
+                                    <input 
+                                        id="file-upload" 
+                                        name="file-upload" 
+                                        type="file" 
+                                        className="hidden" 
+                                        multiple 
+                                        accept="image/*" 
+                                        onChange={handleImageChange} 
+                                    />
+                                </label>
+                            )}
                         </div>
+                        <p className="text-xs text-gray-500 mt-3 italic">
+                            Haz clic en el icono de edición (<Edit2 className="inline h-3 w-3" />) para ocultar la patente antes de publicar.
+                        </p>
                     </div>
+
+                    {editingImageIndex !== null && (
+                        <PhotoEditorModal 
+                            imageFile={formData.images[editingImageIndex]}
+                            onSave={handleSaveEditedImage}
+                            onCancel={() => setEditingImageIndex(null)}
+                        />
+                    )}
 
                     {/* Contacto */}
                     <div className="pt-8">
