@@ -231,13 +231,13 @@ app.get('/api/listings', async (req, res) => {
 // Mercado Libre Detailed Search
 app.get('/api/search/ml', async (req, res) => {
     try {
-        const { brand, model, year, text } = req.query;
+        const { brand, model, yearFrom, yearTo, text } = req.query;
         
         if (!brand || !model) {
             return res.status(400).json({ error: 'Marca y modelo son requeridos' });
         }
 
-        const results = await mlService.executeSearch({ brand, model, year, text });
+        const results = await mlService.executeSearch({ brand, model, yearFrom, yearTo, text });
         res.json(results);
     } catch (err) {
         console.error('ML Search Error:', err);

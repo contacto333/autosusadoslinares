@@ -26,11 +26,11 @@ const Home = () => {
             });
     }, []);
 
-    const handleSearch = async ({ brand, model, year, text }) => {
+    const handleSearch = async ({ brand, model, yearFrom, yearTo, text }) => {
         setIsSearchingML(true);
         setSearchPerformed(true);
         try {
-            const queryParams = new URLSearchParams({ brand, model, year });
+            const queryParams = new URLSearchParams({ brand, model, yearFrom, yearTo });
             if (text) queryParams.append('text', text);
             
             const res = await fetch(`${API_URL}/api/search/ml?${queryParams.toString()}`);

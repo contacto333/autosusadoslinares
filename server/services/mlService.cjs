@@ -5,25 +5,26 @@ const url = require('url');
  * @param {Object} params 
  * @param {string} params.brand 
  * @param {string} params.model 
- * @param {string|number} params.year - Can be a single year, or year_from/year_to. In this case, single year.
+ * @param {string|number} [params.yearFrom] 
+ * @param {string|number} [params.yearTo] 
  * @param {string} [params.text] - Free text
  * @returns {string[]} Array of queries to attempt
  */
-const generateQueries = ({ brand, model, year, text }) => {
+const generateQueries = ({ brand, model, yearFrom, yearTo, text }) => {
     const base = `${brand} ${model}`.trim();
     const queries = [];
     
     // Most specific
-    const parts = [brand, model, year, text].filter(Boolean);
+    const parts = [brand, model, text].filter(Boolean);
     queries.push(parts.join(' '));
     
     // Without free text if provided
     if (text) {
-        queries.push([brand, model, year].filter(Boolean).join(' '));
+        queries.push([brand, model].filter(Boolean).join(' '));
     }
     
     // Just brand and model
-    if (year || text) {
+    if (text || yearFrom || yearTo) {
         queries.push(base);
     }
     
@@ -38,10 +39,10 @@ const generateQueries = ({ brand, model, year, text }) => {
  */
 const predictCategory = async (query) => {
     try {
-        const response = await fetch(`https://api.mercadolibre.com/sites/MLC/category_predictor/predict?title=${encodeURIComponent(query)}`);
+        const response = await fetch(`https://api.mercadolibre.com/sites/MLC/domain_discovery/search?limit=1&q=${encodeURIComponent(query)}`);
         if (!response.ok) return null;
         const data = await response.json();
-        return data.id || null;
+        return data[0]?.category_id || null;
     } catch (err) {
         console.error('Predict Category Error:', err);
         return null;
@@ -52,22 +53,37 @@ const predictCategory = async (query) => {
  * Searches items in Mercado Libre API
  * @param {string} query 
  * @param {string} [categoryId] 
+ * @param {Object} [dateRange]
  * @returns {Promise<Object[]>}
  */
-const searchItems = async (query, categoryId) => {
+const searchItems = async (query, categoryId, { yearFrom, yearTo }) => {
     try {
         let apiUrl = `https://api.mercadolibre.com/sites/MLC/search?q=${encodeURIComponent(query)}&condition=used`;
         if (categoryId) {
             apiUrl += `&category=${categoryId}`;
         }
         
-        const response = await fetch(apiUrl);
-        if (!response.ok) return [];
+        // Agregar filtro de año si ambos existen
+        if (yearFrom && yearTo) {
+            apiUrl += `&VEHICLE_YEAR=${yearFrom}-${yearTo}`;
+        }
+
+        const headers = process.env.ML_ACCESS_TOKEN ? {
+            'Authorization': `Bearer ${process.env.ML_ACCESS_TOKEN}`
+        } : {};
+        
+        const response = await fetch(apiUrl, { headers });
         const data = await response.json();
+        if (!response.ok) {
+            if (response.status === 403) {
+                console.warn('API de Mercado Libre bloqueó la solicitud (403 Forbidden). Puede requerirse un ML_ACCESS_TOKEN válido.');
+            }
+            throw new Error(data.message || 'Error from ML API');
+        }
         return data.results || [];
     } catch (err) {
-        console.error('Search Items Error:', err);
-        return [];
+        console.error('Search Items Error:', err.message);
+        throw err;
     }
 };
 
@@ -131,13 +147,24 @@ const calculateRelevanceScore = (item, params) => {
     
     if (params.brand && itemTitle.includes(params.brand.toLowerCase())) score += 10;
     if (params.model && itemTitle.includes(params.model.toLowerCase())) score += 10;
-    if (params.year && itemTitle.includes(params.year.toString())) score += 5;
+    
+    // Check if item.year falls within range
+    const parsedYear = parseInt(item.year, 10);
+    if (!isNaN(parsedYear)) {
+        if (params.yearFrom && params.yearTo) {
+            if (parsedYear >= parseInt(params.yearFrom, 10) && parsedYear <= parseInt(params.yearTo, 10)) {
+                score += 15;
+            } else {
+                score -= 20; // Penalización por estar fuera de rango
+            }
+        }
+    }
+    
     if (params.text && itemTitle.includes(params.text.toLowerCase())) score += 3;
     
     // Matching attributes is even better
     if (params.brand && item.brand.toLowerCase() === params.brand.toLowerCase()) score += 15;
     if (params.model && item.model.toLowerCase() === params.model.toLowerCase()) score += 15;
-    if (params.year && item.year.toString() === params.year.toString()) score += 10;
 
     return score;
 };
@@ -148,11 +175,21 @@ const calculateRelevanceScore = (item, params) => {
  */
 const executeSearch = async (params) => {
     const queries = generateQueries(params);
+    let apiError = null;
     
     const resultsLists = await Promise.all(queries.map(async (query) => {
         const categoryId = await predictCategory(query);
-        return await searchItems(query, categoryId);
+        try {
+            return await searchItems(query, categoryId, { yearFrom: params.yearFrom, yearTo: params.yearTo });
+        } catch (err) {
+            apiError = err.message;
+            return [];
+        }
     }));
+
+    if (apiError && resultsLists.every(list => list.length === 0)) {
+        throw new Error(apiError);
+    }
 
     const deduplicated = mergeAndDeduplicate(resultsLists);
     

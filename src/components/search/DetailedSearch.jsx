@@ -4,18 +4,23 @@ import { Search } from 'lucide-react';
 const DetailedSearch = ({ onSearch, isLoading }) => {
     const [brand, setBrand] = useState('');
     const [model, setModel] = useState('');
-    const [year, setYear] = useState('');
+    const [yearFrom, setYearFrom] = useState('');
+    const [yearTo, setYearTo] = useState('');
     const [text, setText] = useState('');
     const [error, setError] = useState('');
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!brand.trim() || !model.trim() || !year.trim()) {
-            setError('Marca, modelo y año son obligatorios.');
+        if (!brand.trim() || !model.trim() || !yearFrom.trim() || !yearTo.trim()) {
+            setError('Marca, modelo y el rango de años son obligatorios.');
+            return;
+        }
+        if (parseInt(yearFrom) > parseInt(yearTo)) {
+            setError('El año desde no puede ser mayor al año hasta.');
             return;
         }
         setError('');
-        onSearch({ brand, model, year, text });
+        onSearch({ brand, model, yearFrom, yearTo, text });
     };
 
     return (
@@ -39,13 +44,21 @@ const DetailedSearch = ({ onSearch, isLoading }) => {
                         required
                     />
                 </div>
-                <div>
+                <div className="grid grid-cols-2 gap-2">
                     <input 
                         type="number"
                         className="w-full px-4 py-3 rounded-xl bg-white border-0 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all"
-                        placeholder="Año (Ej: 2020) *" 
-                        value={year} 
-                        onChange={e => setYear(e.target.value)}
+                        placeholder="Año desde *" 
+                        value={yearFrom} 
+                        onChange={e => setYearFrom(e.target.value)}
+                        required
+                    />
+                    <input 
+                        type="number"
+                        className="w-full px-4 py-3 rounded-xl bg-white border-0 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all"
+                        placeholder="Año hasta *" 
+                        value={yearTo} 
+                        onChange={e => setYearTo(e.target.value)}
                         required
                     />
                 </div>

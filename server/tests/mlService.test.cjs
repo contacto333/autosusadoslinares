@@ -11,13 +11,13 @@ test('generateQueries should generate multiple descending specific queries', () 
     const queries = generateQueries({
         brand: 'Toyota',
         model: 'Yaris',
-        year: '2020',
+        yearFrom: 2015,
+        yearTo: 2020,
         text: 'rojo'
     });
     
     assert.deepStrictEqual(queries, [
-        'Toyota Yaris 2020 rojo',
-        'Toyota Yaris 2020',
+        'Toyota Yaris rojo',
         'Toyota Yaris'
     ]);
 });
@@ -26,7 +26,6 @@ test('generateQueries should filter out empty fields', () => {
     const queries = generateQueries({
         brand: 'Kia',
         model: 'Rio',
-        year: '',
         text: ''
     });
     
@@ -54,7 +53,7 @@ test('mergeAndDeduplicate should remove duplicates by id', () => {
 });
 
 test('calculateRelevanceScore should give higher score to better matches', () => {
-    const params = { brand: 'Mazda', model: '3', year: '2015' };
+    const params = { brand: 'Mazda', model: '3', yearFrom: 2014, yearTo: 2016 };
     
     const itemPerfectMatch = {
         title: 'Mazda 3 2015 full equipo',
@@ -70,10 +69,19 @@ test('calculateRelevanceScore should give higher score to better matches', () =>
         year: '2015'
     };
     
+    const itemOutOfRange = {
+        title: 'Mazda 3 2010',
+        brand: 'Mazda',
+        model: '3',
+        year: '2010'
+    };
+    
     const scorePerfect = calculateRelevanceScore(itemPerfectMatch, params);
     const scorePartial = calculateRelevanceScore(itemPartialMatch, params);
+    const scoreOut = calculateRelevanceScore(itemOutOfRange, params);
     
     assert.ok(scorePerfect > scorePartial, 'Perfect match should have higher score');
+    assert.ok(scorePerfect > scoreOut, 'In range should score higher than out of range');
 });
 
 test('normalizeItem should extract attributes correctly', () => {
